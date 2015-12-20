@@ -29,7 +29,6 @@ from flask import send_file
 from flask import send_from_directory
 from flask import make_response
 
-from .decorators import async
 from sima import ImagingDataset
 from sima import Sequence
 from sima.ROI import ROIList
