@@ -1,0 +1,2106 @@
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" 
+            href="{{ url_for('static', filename='css/index.css') }}">
+    <title>my awesome website</title>
+</head>
+
+<body>
+    <div class="controls">
+        <div class="button selected" id="load_button"><span>load</span></div>
+        <div class="loadBox" id="load_box">
+            <p>file selection:</p>
+            <p style="width:auto;margin:0px 5px">
+                <input 
+                    type="text" 
+                    id="file_input" 
+                    class="textInput floatLeft">
+                <div class="button smallButton floatLeft" id="file_get">
+                    <span>go</span>
+                </div>
+                <div class="button smallButton floatRight" id="file_cancel">
+                    <span>X</span>
+                </div>
+            </p>
+            <div class="width100"></div>
+            <p style="width:auto;margin:0px 5px">
+                <select id="file_select"></select>
+                <div class="button smallButton floatLeft" id="file_up_level">
+                    <span>..</span>
+                </div>
+            </p>
+            <div id="cycle_select_container" class="hidden">
+                <p><span class="floatLeft">Imaging Cycle:</span>
+                    <select 
+                        class="floatLeft" 
+                        id="cycle_select" 
+                        style="width:100px; min-width:100px; margin: 0px 15px;">
+                    </select>
+                </p>
+            </div>
+            <div>
+                <p><span class="floatLeft">Contrast Cutoff:</span>
+                    <input type="text" 
+                           class="norming_value_input floatLeft" 
+                           id="ch1_norm_input">
+                    <input type="text" 
+                           class="norming_value_input floatLeft hidden" 
+                           id="ch2_norm_input">
+                </p>
+            </div>
+            <p style="width:auto;margin:0px 5px">
+                <select class="floatLeft" id="channel_select"></select>
+                <div class="button smallButton floatLeft hidden" 
+                     id="load_dataset_button">
+                    <span>ok</span>
+                </div>
+            </p>
+
+         </div>
+         <div class="button" id="options_button"><span>options</span></div>
+         <div class="loadBox hidden" id="options_box">
+            <p style="width:auto;margin:0px 5px">
+                <table class="floatLeft">
+                    <tr>
+                        <td>frame rate:</td>
+                        <td>
+                            <input type="text" 
+                                   id="frame_rate_input" 
+                                   class="textInput floatLeft">
+                        </td>
+                        <td>Hz</td>
+                    </tr>
+                    <tr>
+                        <td>packet size:</td>
+                        <td>
+                            <input type="text" 
+                                   id="packet_size_input" 
+                                   class="textInput floatLeft">
+                        </td>
+                        <td>frames</td>
+                    </tr>
+                    <tr>
+                        <td>buffer size:</td>
+                        <td>
+                            <input type="text" 
+                                   id="buffer_size_input" 
+                                   class="textInput floatLeft">
+                        </td>
+                        <td>frames</td>
+                    </tr>
+                </table>
+                <div class="button smallButton floatRight" id="options_cancel">
+                    <span>ok</span>
+                </div>
+            </p>
+        </div>
+        <div class="button" id="start_button"><span>start</span></div>
+        <div class="button" id="stop_button"><span>stop</span></div>
+        <div>
+            <select id="plane_select">
+                <option val="0">0</option>
+            </select>
+        </div>
+        <div class="loadBox hidden" id="goto_box">
+            <p>go to:</p>
+            <p style="width:auto;margin:0px 5px">
+                <input type="text" id="goto_frame_input" class="textInput floatLeft">
+                <div class="button smallButton floatLeft" id="goto_frame_button">
+                    <span>go</span>
+                </div>
+                <div class="button smallButton floatRight" id="goto_cancel_button">
+                    <span>X</span>
+                </div>
+            </p>
+        </div>
+        <div class="largeLabel" id="frame_number_label">
+            <span id="frame_number_span">
+                <span id="this_frame_label">0</span>/<span id="frame_num_label">0</span>
+            </span>
+        </div>
+        <div class="smallLabel" id="step_size_label">
+            <span>step size: <span id="step_size_span">1</span></span>
+        </div>
+       
+        <div>
+            <input type="range" name="frame_slider" id="frame_slider" 
+                    min="0" max="100" value="0">
+        </div>
+        
+        <div>
+            <div class="button halfButton floatLeft stepButton" 
+                 id="single_reverse_button">
+                <span>&#60;</span>
+            </div>
+            <div class="button halfButton floatLeft stepButton" 
+                 id="single_step_button">
+                <span>&#62;</span>
+            </div>
+        </div>
+        <div>
+            <div class="button halfButton floatLeft slim" 
+                 id="reduce_step_button">
+                <span>&#60;&#60;</span>
+            </div>
+            <div class="button halfButton floatLeft slim" 
+                 id="increase_step_button">
+                <span>&#62;&#62;</span>
+            </div>
+        </div>
+        <div class="warningBox" id="buffering_warning"><span></span></div>
+        <div> 
+            <p>min:<span id="buff_min"></span>
+            <p>max:<span id="buff_max"></span>
+            <p>curr:<span id="buff_curr"></span>
+        </div>
+        <div class="indicator floatLeft" id="indicator"><span>&nbsp;</span></div>
+    </div>
+
+    <div id="roi_controls" class="minified"> 
+        <div class="arrowContainer">
+            <span class="arrowOut">
+                <div align="center">&nbsp;&#60;</div>
+                <div style="height:75px;">&nbsp;</div>
+                <div align="center">R</div>
+                <div align="center">O</div>
+                <div align="center">I</div>
+                <div align="center">s</div>
+            </span>
+            <span class="arrowIn">&nbsp;&#62;</span>
+        </div>
+        <div class="controlContainer floatLeft"> 
+        <div id="roi_control_heading">
+            <div class="floatLeft" style="width:147px">
+                <select id="label_select" class="floatLeft"></select>
+                <span id="roi_label_span" class="floatLeft selectable">
+                    options
+                </span>
+            </div>
+            <div class="roiPolygonsButton button smallButton floatLeft">l</div>
+            <div class="roiProjectionsButton button smallButton floatLeft">r</div>
+            <div id="roi_set_options">
+                <table>
+                    <tr>
+                        <td>shading:</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <input type="range" 
+                                   name="roi_slider" 
+                                   id="roi_slider" 
+                                   min="0" 
+                                   max="100" 
+                                   value="0"
+                                   style="width:220px">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>new label</td>
+                        <td><input type="text" id="roi_label_input"/></td>
+                        <td class="tableButton" id="set_roi_label_button">set</td>
+                    </tr>
+                    <tr>
+                        <td 
+                            class="tableButton"
+                            colspan="2"
+                            id="delete_roi_label_button">delete label</td>
+                    </tr>
+                    <tr>
+                        <td 
+                            class="tableButton roiLoadButton" 
+                            id="polygon_roi_load_button" 
+                            colspan="2">load all polygons</td>
+                    </tr>
+                    <!-- tr>
+                        <td class="tableButton roiLoadButton" 
+                            id="projection_roi_load_button" 
+                            colspan="2">load all projections</td>
+                    </tr-->
+                    <tr>
+                        <td class="tableButton clearRoiButton" colspan="2">clear rois</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div style="height:300px;width:300px" class="floatLeft">
+            <div 
+                id="roi_tab_container" 
+                style="width:100%; height:100%; overflow:auto; margin:1px;">
+
+                <div id="roi_tab_template" class="roiTab hidden">
+                    <div class="roiTabLabel floatLeft">
+                        <span class="roiNumberSpan">0</span>
+                        .&nbsp;&nbsp;
+                        <span class="roiIdSpan">roi_id</span>
+                    </div>
+                    <div 
+                        class="roiPolygonsButton button smallButton floatLeft">l</div>
+                    <div 
+                        class="roiProjectionsButton button smallButton floatLeft"
+                        style="visibility: hidden">r</div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+
+    <div id="drawing_controls" class="hidden">
+        <table>
+            <tr>
+                <td>Id:</td><td><span id="drawing_id"></span></td>
+            </tr>
+            <tr>
+                <td>label:</td>
+                <td>
+                    <input type="text"
+                           id="drawing_label"
+                           class="textInput floatLeft">
+                </td>
+            </tr>
+            <tr>
+                <td>transparency</td>
+            </tr>
+            <tr>
+                <td colspan="3"><input type="range" 
+                       name="roi_edit_slider" 
+                       id="roi_edit_slider" 
+                       min="0" 
+                       max="100" 
+                       value="0"
+                       style="width:170px"></td>
+            </tr>
+            <tr>
+                <table>
+                    <tr>
+                    <td>
+                        <div id="draw_roi_button"
+                             class="button halfButton floatLeft slim 
+                                    handleButtonClick">
+                             draw
+                        </div>
+                    </td>
+                    <td>
+                        <div id="select_roi_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick">
+                             select
+                        </div>
+                    </td>
+                    <td>
+                        <div id="simplify_roi_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick roiEditButton disabled">
+                             simplify
+                        </div>
+                    </td>
+                    </tr>
+                    <tr>
+                    <td>
+                        <div id="save_roi_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick roiEditButton disabled">
+                             save
+                         </div>
+                     </td>
+                     <td>
+                        <div id="delete_roi_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick roiEditButton disabled">
+                             delete
+                        </div>
+                     </td>
+                     <td>
+                        <div id="move_roi_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick roiEditButton disabled">
+                             move
+                        </div>
+                     </td>
+                     </tr>
+                     <tr>
+                     <td>
+                        <div id="edit_roi_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick roiEditButton disabled">
+                             edit
+                        </div>
+                     </td>
+                     </tr>
+                 </table>
+            </tr>
+        </table>
+    </div>
+
+    <div class="width100 height100">
+        <div class="canvasContainer">
+            <div class="editablePoint hidden" id="editable_point_template">
+                <div class="editableImageContainer"></div>
+            </div>
+            <canvas class="webGlCanvas" id="gl_canvas" width="800" height="700"></canvas>
+            <canvas class="webGlCanvas" id="roi_canvas" width="800" height="700"></canvas>
+            <canvas class="webGlCanvas" id="roi_editing_canvas" width="800" height="700"></canvas>
+            <canvas class="webGlCanvas" id="positioning_canvas" width="800" height="700"></canvas>
+            <div class="button smallButton" 
+                 id="volume_button" 
+                 style="position:absolute; top:0px; right:0px;">V</div>
+            <div class="button smallButton" 
+                 id="scroll_in_button" 
+                 style="position:absolute; top:29px; right:0px;">&#43;</div>
+            <div class="button smallButton" 
+                 id="scroll_out_button" 
+                 style="position:absolute; top:58px; right:0px;">&#45;</div>
+            <div class="button smallButton hidden" 
+                 id="roi_mode_button" 
+                 style="position:absolute; margin-top:670px; right:0px;">R</div>
+        </div>
+    </div>
+
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/jquery-1.11.2.min.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/glMatrix-0.9.5.min.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/frame_buffer.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/webgl_helpers.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/frame_viewer.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/tinycolor.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/roi.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/roi_viewer.js') }}"></script>
+    <script type="text/javascript" 
+        src="{{ url_for('static', filename='scripts/earcut.min.js') }}"></script>
+
+
+    <script id="colormap-shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+        varying vec2 vTextureCoord;
+        uniform float startX;
+        uniform float startY;
+
+        void main(void) {
+            if (false) {
+                gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
+            } else {
+                if ((vTextureCoord.s > startX) && (vTextureCoord.t) > startY) {
+                    gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
+                } else {
+                    gl_FragColor = vec4(0, 0, 0, 0);
+                }
+            }
+        }
+    </script>
+
+
+    <script id="colormap-shader-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+        attribute vec2 aTextureCoord;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+
+        varying vec2 vTextureCoord;
+
+        void main(void) {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            vTextureCoord = aTextureCoord;
+        }
+    </script>
+
+
+    <script id="shape-shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+        uniform vec3 uColor;
+        uniform float uOpacity;
+
+        void main(void) {
+            gl_FragColor = vec4(uColor.rgb*uOpacity,uOpacity);
+        }
+    </script>
+
+
+    <script id="shape-shader-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+
+        void main(void) {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            gl_PointSize = 5.0;
+        }
+    </script>
+
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTextureCoord;
+        uniform sampler2D uSampler;
+        uniform int num_channels;
+        uniform int uColorMode;
+        uniform float roiOpacity;
+        
+        void main(void) {
+            if (num_channels == 1) {
+                vec4 myTex = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+                //if ((myTex.r == 1.0)||(roiOpacity != 0.0)) {
+                if (roiOpacity != 0.0) {
+                    if (uColorMode == 0) {
+                        myTex.b = 0.0;
+                        myTex.g = 0.0;
+                    }
+                    float opacity = myTex.b+myTex.r+myTex.g;
+                    gl_FragColor = vec4(myTex.r-myTex.r*roiOpacity,
+                                        myTex.g-myTex.g*roiOpacity,
+                                        myTex.b-myTex.b*roiOpacity,
+                                        opacity*(1.0-roiOpacity));
+                } else if (myTex.r == 0.0 ) { 
+                    if (uColorMode == 0) {
+                        myTex.b = 0.0;
+                        myTex.r = 0.0;
+                    }
+                    float opacity = myTex.b+myTex.r+myTex.g;
+                    gl_FragColor = vec4(myTex.r-myTex.r*roiOpacity,
+                                        myTex.g-myTex.g*roiOpacity,
+                                        myTex.b-myTex.b*roiOpacity,
+                                        opacity*(1.0-roiOpacity));
+
+                } else {
+                    gl_FragColor = vec4(myTex.rgb, 1.0);
+                }
+            } else {
+                vec4 channel1 = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t + 0.5));
+                vec4 channel2 = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+                if (vTextureCoord.t < 0.5) {
+                    gl_FragColor = vec4(channel1.s,channel2.s,0.0,0.0);
+                } else {
+                    gl_FragColor = vec4(0.0,0.0,0.0,0.0);
+                }
+            }
+        }
+    </script>
+
+
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+        attribute vec2 aTextureCoord;
+        varying vec2 vTextureCoord;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+
+        void main(void) {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            vTextureCoord = aTextureCoord;
+        }
+    </script>
+
+    <script type="text/javascript">
+        var g_frameBuffer
+        var g_filePath
+        var g_packetSize = 8
+        var g_normingVal = {'0':0,'1':0}
+        var g_frameViewer;
+        var g_roiViewer;
+        var g_roiEditor;
+
+        function initShaders(gl, fragShader) {
+            var fragmentShader = getShader(gl, fragShader)
+            var vertexShader = getShader(gl, "shader-vs")
+
+            var shaderProgram = gl.createProgram()
+            gl.attachShader(shaderProgram, vertexShader)
+            gl.attachShader(shaderProgram, fragmentShader)
+            gl.linkProgram(shaderProgram)
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                alert("Cold not initialise shaders")
+            }
+            gl.useProgram(shaderProgram)
+
+            shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition")
+            gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute)
+
+            shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord")
+            gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute)
+
+            shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix")
+            shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix")
+            shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler")
+
+            shaderProgram.channelsUniform = gl.getUniformLocation(shaderProgram, "num_channels")
+            shaderProgram.colorModeUniform = gl.getUniformLocation(shaderProgram, "uColorMode")
+            gl.uniform1i(shaderProgram.colorModeUniform, 0)
+            shaderProgram.roiOpacity = gl.getUniformLocation(shaderProgram, "roiOpacity")
+            gl.shaderProgram = shaderProgram
+        }
+
+
+        var mvMatrix = mat4.create()
+        var pMatrix = mat4.create()
+        function setMatrixUniforms(gl) {
+            if (typeof gl.shaderProgram === "undefined") {
+                debugger;
+            }
+            gl.uniformMatrix4fv(gl.shaderProgram.pMatrixUniform, false, pMatrix)
+            gl.uniformMatrix4fv(gl.shaderProgram.mvMatrixUniform, false, mvMatrix)
+        }
+   
+
+        function drawScene(gl) {
+            gl.viewport(0,0, gl.viewportWidth, gl.viewportHeight)
+            gl.clearColor(0,0,0,0)
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+            var zProjection = gl.projections.zProjection;
+            var xProjection = gl.projections.xProjection;
+            var yProjection = gl.projections.yProjection;
+         
+            var num_channels = 1
+            if ($('#channel_select').val() == 'overlay') {
+                num_channels = 2
+            }
+
+            var translate_y = g_frameViewer.mainProjectionHeight/2 + 0.35;
+            var translate_x = g_frameViewer.mainProjectionWidth/2 + 0.35;
+            var offset = g_frameViewer.offset;
+
+            gl.uniform1i(gl.shaderProgram.samplerUniform, 0)
+            gl.uniform1i(gl.shaderProgram.channelsUniform, num_channels)
+            if (gl.canvas==$('#gl_canvas')[0]) {
+                gl.uniform1f(gl.shaderProgram.roiOpacity, 0)
+            } else {
+                gl.uniform1f(gl.shaderProgram.roiOpacity, 1.01-$('#roi_slider').val()/100.0)
+            }
+
+            mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix)
+            mat4.identity(mvMatrix)
+            mat4.translate(mvMatrix, [-0.25+offset.x, 0.25+offset.y, g_frameViewer.zoomLevel])
+            setMatrixUniforms(gl)
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, zProjection.vertexPositionBuffer)
+            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute, 
+                    zProjection.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0)
+            gl.bindBuffer(gl.ARRAY_BUFFER, zProjection.textureCoordBuffer)
+            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
+                    zProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
+
+            gl.activeTexture(gl.TEXTURE0)
+            gl.bindTexture(gl.TEXTURE_2D, zProjection.texture)
+            
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, zProjection.vertexPositionBuffer.numItems)
+
+
+            mat4.translate(mvMatrix, [translate_x, 0.0, 0.0])
+            setMatrixUniforms(gl)
+            gl.bindBuffer(gl.ARRAY_BUFFER, xProjection.vertexPositionBuffer)
+            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute, 
+                    xProjection.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0)
+            gl.bindBuffer(gl.ARRAY_BUFFER, xProjection.textureCoordBuffer)
+            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
+                    xProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
+
+            gl.activeTexture(gl.TEXTURE0)
+            gl.bindTexture(gl.TEXTURE_2D, xProjection.texture)
+
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, xProjection.vertexPositionBuffer.numItems)
+
+
+            mat4.translate(mvMatrix, [-translate_x, -translate_y, 0.0])
+            setMatrixUniforms(gl)
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, yProjection.vertexPositionBuffer)
+            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute, 
+                    yProjection.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0)
+            gl.bindBuffer(gl.ARRAY_BUFFER, yProjection.textureCoordBuffer)
+            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
+                    yProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
+
+            gl.activeTexture(gl.TEXTURE0)
+            gl.bindTexture(gl.TEXTURE_2D, yProjection.texture)
+            
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, yProjection.vertexPositionBuffer.numItems)
+        }
+
+        function drawColorMap(gl, offset) {
+            var translate_y = g_frameViewer.mainProjectionHeight/2 + 0.35;
+            var translate_x = g_frameViewer.mainProjectionWidth/2 + 0.35;
+            var offset = g_frameViewer.offset;
+
+            gl.squareVertexPositionBuffer = createSquareVertexPositionBuffer(
+                gl,g_frameViewer.mainProjectionWidth,g_frameViewer.mainProjectionHeight);
+            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+            gl.clearColor(0, 0, 0, 0)
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            gl.textureCoordBuffer = createTextureCoordBuffer(gl);
+
+            mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+            mat4.identity(mvMatrix)
+            mat4.translate(mvMatrix, [-0.25+offset.x, 0.25+offset.y, g_frameViewer.zoomLevel])
+            setMatrixUniforms(gl)
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.squareVertexPositionBuffer);
+            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute, gl.squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.textureCoordBuffer);
+            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, gl.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+            setMatrixUniforms(gl);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, gl.squareVertexPositionBuffer.numItems);
+        }
+
+
+        function createProjectionContext(canvas_id) {
+            var gl = initGL($(canvas_id)[0]);
+            gl.render = function() {drawScene(this)};
+            initShaders(gl, 'shader-fs')
+            gl.projections = {}
+
+            gl.projections.zProjection = {
+                vertexPositionBuffer: 
+                    createSquareVertexPositionBuffer(gl,2.0,2.0),
+                textureCoordBuffer: createTextureCoordBuffer(gl),
+                texture: gl.createTexture()
+            }
+            gl.projections.zProjection.texture.image = new Image()
+
+            gl.projections.xProjection = {
+                vertexPositionBuffer: 
+                    createSquareVertexPositionBuffer(gl,0.5,2.0),
+                textureCoordBuffer: createTextureCoordBuffer(gl),
+                texture: gl.createTexture()
+            }           
+            gl.projections.xProjection.texture.image = new Image()
+
+            gl.projections.yProjection = {
+                vertexPositionBuffer: 
+                    createSquareVertexPositionBuffer(gl,2.0,0.5),
+                textureCoordBuffer: createTextureCoordBuffer(gl),
+                texture: gl.createTexture()
+            }           
+            gl.projections.yProjection.texture.image = new Image()
+
+            gl.projections.zProjection.texture.image.onload = function(){imageOnload(gl)};
+
+            gl.clearColor(0.0, 0.0, 0.0, 1.0)
+            gl.enable(gl.DEPTH_TEST)
+
+            return gl;
+        }
+
+
+        $("#gl_canvas").ready(function webGLStart (){
+            var frameContext = createProjectionContext('#gl_canvas');
+            frameContext.frameViewer = true;
+            g_frameViewer = new FrameViewer(frameContext);
+
+            {% if dataset %}
+                $('#file_input').val(decodeURIComponent('{{ dataset }}'));
+                $('#file_get').trigger('click');
+
+                $('#load_dataset_button').attr('auto_click', 'true');
+
+                {% if channel %}
+                    $('#channel_select').attr('set_val','{{ channel }}');
+                {% endif %}
+
+                {% if cycle %}
+                    $('#cycle_select').attr('set_val','{{ cycle }}');
+                {% endif %}
+
+                {% if cutoff1 %}
+                    $('#ch1_norm_input').attr('set_val','{{ cutoff1 }}');
+                {% endif %}
+
+                {% if cutoff2 %}
+                    $('#ch2_norm_input').attr('set_val','{{ cutoff2 }}');
+                {% endif %}
+            {% endif %}
+        });
+
+        $('#roi_canvas').ready(function() {
+            g_roiViewer = new ROIViewer($('#roi_canvas'),g_frameViewer,
+                    $('#roi_slider'));
+            g_roiViewer.createContext();
+        });
+
+        $('#roi_editing_canvas').ready(function() {
+            g_roiEditor = new ROIViewer($('#roi_editing_canvas'),g_frameViewer,
+                    $('#roi_edit_slider'));
+            g_roiEditor.createContext();
+        });
+
+        function createPositioningContext(canvas_id) {
+            var gl = initGL($(canvas_id)[0]);
+            initShadersGen(gl, 'colormap-shader-fs', 'colormap-shader-vs');
+            gl.shaderProgram.textureCoordAttribute = gl.getAttribLocation(
+                    gl.shaderProgram, 'aTextureCoord');
+            gl.shaderProgram.startX = gl.getUniformLocation(gl.shaderProgram, "startX");
+            gl.uniform1f(gl.shaderProgram.startX, 0)
+            gl.shaderProgram.startY = gl.getUniformLocation(gl.shaderProgram, "startY");
+            gl.uniform1f(gl.shaderProgram.startY, 0)
+
+            gl.enableVertexAttribArray(gl.shaderProgram.textureCoordAttribute);
+            drawColorMap(gl,0);
+
+            return gl;
+        }
+
+        var positioningContext;
+        $("#positioning_canvas").ready(function webGLStart (){
+            positioningContext = createPositioningContext('#positioning_canvas');
+        });
+
+      
+        function playFramesFromQueue(forceStep) {
+            var min = g_frameBuffer.keys[0]
+            var max = g_frameBuffer.maxSortedIndex
+            $('#buff_min').text(g_frameBuffer.keys[0])
+            $('#buff_max').text(g_frameBuffer.maxSortedIndex)
+            var nextFrame = g_frameBuffer.next()
+            if (g_frameBuffer.has_next($('#plane_select').val())) {
+                if (g_frameViewer.isPlaying() || forceStep) {
+                    $('#buff_curr').text(nextFrame)
+                    g_frameViewer.current = nextFrame;
+                    var thisFrame = g_frameBuffer.popFrame(nextFrame,
+                        g_frameViewer.getCurrentPlane())
+
+                    if (g_frameBuffer.hasVolume()) {
+                        $('#volume_button').addClass('loaded');
+                    } else {
+                        $('#volume_button').removeClass('loaded')
+                                           .removeClass('selected');
+                    }
+
+                    if(!$('#frame_slider').hasClass('moving')) {
+                        $('#frame_slider').val(nextFrame)
+                    }
+
+                    if (!thisFrame) debugger;
+                    
+                    g_frameViewer.setFrame(thisFrame);
+                    $('#this_frame_label').text(parseInt(nextFrame)+1)
+
+                    setTimeout(function(){playFramesFromQueue()}, g_frameViewer.frameDelay)
+
+                    if (!fetching && !g_frameBuffer.isFull()) {
+                        fetching = true
+                        $('#buffering_warning').text('')
+                        fetchFrames()
+                    }
+                }
+            } else {
+                $('#buffering_warning').text('buffering... please wait')
+                g_frameViewer.setPlaying(false);
+                if (!fetching) {
+                    fetching = true
+                    fetchFrames()
+                }
+            }
+        }
+
+        var fetching = true
+        function fetchFrames() {
+            if (fetching) {
+                if (!g_frameBuffer.isFull()) {
+                    var frames = g_frameBuffer.next_request(g_packetSize,g_frameViewer.getCurrentPlane())
+                    if (frames.length <= 0) {
+                        fetching=false;
+                        return;
+                    }
+                    $.ajax({
+                        url: '{{ url_for('.getFrames', _external=True) }}',
+                        type: 'POST',
+                        data: {
+                            frames: frames,
+                            path: g_filePath,
+                            planes: [$('#plane_select').val()],
+                            frameDelta: g_frameBuffer.frameDelta,
+                            normingVal: g_normingVal,
+                            channel: g_frameViewer.channel,
+                            cycle: g_frameViewer.cycle,
+                            sequenceId: g_frameBuffer.sequenceId
+                        },
+                        cache: false,
+                    }).done(function(response) {
+                        if (response.sequenceId != g_frameBuffer.sequenceId) {
+                            return;
+                        }
+
+                        $('#indicator').show()
+                        $('#indicator').fadeOut(1000)
+                        if (response.hasOwnProperty('frame_'+g_frameBuffer.next())) {
+                            $('#buffering_warning').text('buffering... press start to resume playback')
+                        }
+                        
+                        g_frameBuffer.addFrames(response)
+
+                        $('#buff_min').text(g_frameBuffer.keys[0])
+                        $('#buff_max').text(g_frameBuffer.maxSortedIndex)
+                        $('#buff_curr').text(g_frameBuffer.current)
+                        if (response.end != true) {
+                            fetchFrames() 
+                        } else {
+                            fetching = false
+                        }
+                    })
+                } else {
+                    fetching = false
+                    if (g_frameViewer.isPlaying()) {
+                        $('#buffering_warning').text('')
+                    } else {
+                        $('#buffering_warning').text('press start to resume playback')
+                    }
+                }
+             }
+        }
+
+        //TODO: is it possible for z projection to finish loading before x and y?
+        //this function may need to be called by a different trigger
+       function imageOnload(context) {
+            updateTextureData(context, context.projections.zProjection.texture,true)
+            updateTextureData(context, context.projections.xProjection.texture,true)
+            updateTextureData(context, context.projections.yProjection.texture,true)
+            context.render();
+
+            //
+            //THIS IS FOR SAVING THE CANVAS AS PNG FILES
+            //
+            /*var c = document.getElementById('gl_canvas')
+            var p = c.toDataURL()
+            $.ajax({
+                url: '{{ url_for('.saveImage', _external=True) }}',
+                type: 'POST',
+                cache: false,
+                data: {
+                    image: p.replace(/^data:image\/(png|jpg);base64,/, ""),
+                    filename: 'frame_'+g_viewerFrame+'.png'
+                }
+            }).done(function(response){
+            })*/
+            
+        }
+
+        $('#start_button').click(function() {
+            if (!g_frameViewer.isPlaying()) {
+                g_frameViewer.setPlaying(true)
+                playFramesFromQueue()
+                if (fetching && g_frameViewer.isPlaying()) {
+                    $('#buffering_warning').text('')
+                }
+            }
+        })
+
+        $('#stop_button').click(function() {
+            g_frameViewer.setPlaying(false);
+        })
+
+        function resizeBuffers(gl,x,y,z) {
+            var zProjection = gl.projections.zProjection;
+            var xProjection = gl.projections.xProjection;
+            var yProjection = gl.projections.yProjection;
+            depth = 0.5
+            if (x < y) {
+                height = 2.0
+                width = 2.0*x/y
+            } else {
+                height = 2.0*y/x
+                width = 2.0
+            }
+
+            g_frameViewer.mainProjectionHeight = height;
+            g_frameViewer.mainProjectionWidth = width;
+
+            zProjection.vertexPositionBuffer = createSquareVertexPositionBuffer(gl,width,height)
+            xProjection.vertexPositionBuffer = createSquareVertexPositionBuffer(gl,depth,height)
+            yProjection.vertexPositionBuffer = createSquareVertexPositionBuffer(gl,width,depth)
+        }
+        
+
+        function loadRoiLabels(filepath) {
+            if (typeof(filepath) === "undefined") {
+                filepath = g_filePath
+            }
+
+            $('#label_select').prop('disabled', true);
+            $.ajax({
+                url: '{{ url_for('.getLabels', _external=True) }}',
+                type: 'POST',
+                data: {
+                    path: filepath
+                },
+                cache: false
+            }).done(function(html) {
+                var labelSelect = $('#label_select');
+                labelSelect.html('')
+                labelSelect.html(html)
+                var options = labelSelect.find('option');
+                if (options.length > 1) {
+                    labelSelect.val(options[1].value)
+                }
+                labelSelect.prop('disabled', false);
+            });
+        }
+
+        function fetchInfo(filePath) {
+            $.ajax({
+                url: '{{ url_for('.getInfo', _external=True) }}',
+                type: 'POST',
+                cache: false,
+                data: {
+                    path: filePath,
+                }
+            }).done(function(response) {
+                $('#indicator').show()
+                $('#indicator').fadeOut(1000)
+
+                if (typeof response.error !== 'undefined') {
+                    alert(response.error);
+                    return;
+                }
+
+                Object.keys(response).map(function(key) {
+                    g_frameViewer[key] = response[key];
+                });
+
+                $('#frame_num_label').text(g_frameViewer.length)  
+
+                if (response['channel_0']) {
+                    var chan1CutoffInput = $('#ch1_norm_input');
+                    if (typeof(chan1CutoffInput.attr('set_val')) !== 'undefined') {
+                        chan1CutoffInput.val(chan1CutoffInput.attr('set_val'));
+                        chan1CutoffInput.removeAttr('set_val');
+                    } else {
+                        chan1CutoffInput.val(response['channel_0'])
+                    }
+                }
+
+                if (response['channel_1']) {
+                    var chan2CutoffInput = $('#ch2_norm_input');
+                    chan2CutoffInput.removeClass('hidden');
+                    if (typeof(chan2CutoffInput.attr('set_val')) !== 'undefined') {
+                        chan2CutoffInput.val(chan2CutoffInput.attr('set_val'));
+                        chan2CutoffInput.removeAttr('set_val');
+                    } else {
+                        chan2CutoffInput.val(response['channel_1'])
+                    }
+                } else {
+                    $('#ch2_norm_input').addClass('hidden');
+                }
+
+                fetching = true
+                resizeBuffers(g_frameViewer.glContext,response.width,response.height)
+                positioningContext = createPositioningContext('#positioning_canvas');
+                $('#frame_slider').attr('max',g_frameViewer.length)
+
+                $('#plane_select').html('');
+                $('#plane_select').attr('max',Math.max.apply(null,response.planes))
+                if (response.planes.length == 2) {
+                    plane = response.planes[1]
+                    $('#plane_select')
+                       .append($('<option>', { plane : plane })
+                       .text(plane)); 
+                } else {
+                    $.each(response.planes, function(plane) { 
+                        $('#plane_select')
+                           .append($('<option>', { plane : plane })
+                           .text(plane)); 
+                   });
+                }
+                var loadButton = $('#load_dataset_button');
+                if (typeof(loadButton.attr('auto_click')) !== 'undefined') {
+                    loadButton.removeAttr('auto_click');
+                    loadButton.trigger('click');
+                } else {
+                    loadButton.removeClass('hidden');
+                }
+            });
+
+            loadRoiLabels(filePath);
+
+        }
+
+        function setSelectedData() {
+            if (g_frameBuffer) {
+                g_frameBuffer.buffer = []
+            }
+            g_roiViewer.clear();
+            g_frameViewer.initMouse($('#roi_editing_canvas'));
+            g_frameBuffer = new FrameBuffer(Date.now(),1000,g_frameViewer.planes);
+            g_frameBuffer.set_planes(g_frameViewer.planes);
+            g_normingVal = [$('#ch1_norm_input').val(),$('#ch2_norm_input').val()]
+            if (!g_normingVal) {
+                alert('normalizing value unset')
+            }
+            if (g_filePath) {
+                $('#buffering_warning').text('buffering.. please wait')
+            }
+
+            var newUrl = '{{ url_for('.index',_external=True) }}?dataset=' + encodeURIComponent(g_filePath) +
+                        '&channel=' + encodeURIComponent(g_frameViewer.channel) +
+                        '&cycle=' + encodeURIComponent(g_frameViewer.cycle) +
+                        '&cutoff1=' + encodeURIComponent(g_normingVal[0]) + 
+                        '&cutoff2=' + encodeURIComponent(g_normingVal[1]);
+            window.history.pushState("string","dataset",newUrl);
+
+            if ($('#channel_select').val() == 'overlay') {
+                g_frameViewer.createTextureBuffers(2);
+            } else {
+                g_frameViewer.createTextureBuffers();
+            }
+
+            //$('#buff_min').text(g_frameBuffer.minKey)
+            //$('#buff_max').text(g_frameBuffer.maxSortedIndex)
+            $('#buff_curr').text(g_frameBuffer.current)
+
+            if (g_filePath.slice(-4) == 'sima') {
+                fetchFrame(-1);
+            } else {
+                fetchFrame(0);
+            }
+            fetchFrames();
+        }
+
+        function fileSelection(file) {
+            $('#load_dataset_button').addClass('hidden')
+            var fullPath = $('#file_input').val().trim();
+            if (!fullPath) {
+                fullPath = '/'
+            }
+            if (file != '') {
+                if (fullPath.slice(-1) != '/') {
+                    fullPath = fullPath + '/'
+                }
+                fullPath = fullPath + file  
+            }
+            $('#file_input').val(fullPath);
+
+            if (fullPath.slice(-5) == '.sima') {
+                $('#cycle_select_container').removeClass('hidden');
+                $('#cycle_select').prop('disabled',true)
+                $.get('{{ url_for('.getCycles',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+                    var cycleSelect = $('#cycle_select');
+                    cycleSelect.html('');
+                    cycleSelect.html(html);
+                    if (typeof(cycleSelect.attr('set_val')) !== 'undefined') {
+                        cycleSelect.val(cycleSelect.attr('set_val'));
+                        cycleSelect.removeAttr('set_val');
+                    }
+                    cycleSelect.prop('disabled', false);
+                });
+            } else {
+                $('#cycle_select_container').addClass('hidden');
+            }
+
+            if ((fullPath.slice(-5) == '.sima') || (fullPath.slice(-2) == 'h5')) {
+                $('#file_select').html('')
+                $('#channel_select').prop('disabled',true)
+                    $.get('{{ url_for('.getChannels',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+                    var channelSelect = $('#channel_select');
+                    channelSelect.html('');
+                    channelSelect.html(html);
+                    if (typeof(channelSelect.attr('set_val')) !== 'undefined') {
+                        channelSelect.val(channelSelect.attr('set_val'));
+                        channelSelect.removeAttr('set_val');
+                    } 
+                    channelSelect.prop('disabled', false);
+                });
+                fetchInfo(fullPath);
+            } else {
+                $('#file_input').val(fullPath)
+                $('#file_select').prop('disabled', true);
+                $.get('{{ url_for('.getFolders',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+                    $('#file_select').html('')
+                    $('#file_select').html(html)
+                    $('#file_select').prop('disabled', false);
+                })
+            }
+        }
+
+        $('#load_dataset_button').click(function() {
+            var fullPath = $('#file_input').val();
+            var file = $('#file_select').val();
+            if (file && file != '') {
+                if (fullPath.slice(-1) != '/') {
+                    fullPath = fullPath + '/'
+                }
+                fullPath = fullPath + file  
+            }
+            $('file_input').val(fullPath);
+            g_filePath = fullPath
+
+            if ((fullPath.slice(-4) == 'sima') || (fullPath.slice(-2) == 'h5')) {
+                g_frameViewer.channel = $('#channel_select').val()
+                g_frameViewer.cycle = $('#cycle_select').val()
+                $('#load_box').addClass('hidden')
+                $('#load_button').removeClass('selected')
+                setSelectedData()
+            }
+        })
+
+        $('#file_select').change(function() {
+            fileSelection($('#file_select').val())
+        })
+
+        $('#file_get').click(function() {
+            fileSelection('')
+        })
+
+        $('#load_button').click(function() {
+            $('#load_button').addClass('selected');
+            $('#load_box').removeClass('hidden');
+            $('#ch1_norm_input').val(g_normingVal[0]);
+            $('#ch2_norm_input').val(g_normingVal[1]);
+        });
+
+        $('#options_button').click(function(){
+            $('#options_button').addClass('selected')
+            $('#options_box').removeClass('hidden')
+
+            $('#frame_rate_input').val(String(Math.round(g_frameViewer.getFrameRate())))
+            $('#packet_size_input').val(g_packetSize)
+            $('#buffer_size_input').val(g_frameBuffer.maxLength)
+        })
+
+        $('#options_cancel').click(function() {
+            $('#options_box').addClass('hidden')
+            $('#options_button').removeClass('selected')
+            g_frameViewer.setFrameRate($('#frame_rate_input').val())
+            g_packetSize = parseInt($('#packet_size_input').val(),10)
+            if (g_frameBuffer) {
+                g_frameBuffer.maxLength = parseInt($('#buffer_size_input').val(),10)
+                var normingVal = $('#norming_value_input').val()
+            }
+        })
+
+
+        $('#file_up_level').click(function() {
+            var path = $('#file_input').val()
+            if (path) {
+                $('#file_input').val(path.substring(0,path.lastIndexOf('/')))
+                fileSelection('') 
+            }
+        })
+
+        $('#file_cancel').click(function() {
+            $('#load_box').addClass('hidden')
+            $('#load_button').removeClass('selected')
+        })
+
+        $('#roi_button').click(function() {
+             $('#roi_button').addClass('selected');
+             $('#roi_box').removeClass('hidden');
+        });
+
+        $('#roi_cancel').click(function() {
+            $('#roi_button').removeClass('selected');
+            $('#roi_box').addClass('hidden');
+        });
+
+
+        function setRoiMask(roiLabel) {
+            alert("set roi mask is disabled");
+            thisRoi = roiContext.rois[roiLabel];
+            roiContext.current = roiLabel
+            roiContext.projections.xProjection.texture.image.src = thisRoi.x;
+            roiContext.projections.yProjection.texture.image.src = thisRoi.y;
+            roiContext.projections.zProjection.texture.image.src = thisRoi.z;
+        }
+
+
+        $('.roiPolygonsButton').click(function() {
+            var thisParent = $(this).parent().attr('id');
+            if (thisParent == "roi_control_heading") {
+                if (! $(this).hasClass('on')){
+                    $(this).addClass('on');
+                    g_roiViewer.rois.every(function(e,i,a) { e.display = true; return true;});
+                    $('#roi_tab_container .roiPolygonsButton').addClass('viewing');
+                } else {
+                    $(this).removeClass('on');
+                    g_roiViewer.rois.every(function(e,i,a) { e.display = false; return true});
+                    $('#roi_tab_container .roiPolygonsButton').removeClass('viewing');
+                }
+            } else {
+                var roiId = parseInt(thisParent.substring(8));
+                if ($(this).hasClass('viewing')) {
+                    g_roiViewer.roi(roiId).display = false;
+                    $(this).removeClass('viewing');
+                } else {
+                    g_roiViewer.roi(roiId).display = true;
+                    $(this).addClass('viewing');
+                }
+            }
+            g_roiViewer.render();
+        });
+
+
+        //TODO: this function uses old roiTab logic
+        function setRoiLoaded(number) {
+            var thisId = 'roi_tab_'+number.toString()
+            $('#'+thisId+' .roiPolygonsButton').addClass('loaded');
+        }
+
+        //TODO: this function uses old roiTab logic
+        function setRoiViewing(number) {
+            var thisId = 'roi_tab_'+number.toString()
+            $('#'+thisId+' .roiPolygonsButton').addClass('viewing');
+        }
+
+
+        //TODO: reimplement mask style ROIs
+        $('.roiLoadButton').click(function() {
+            var loadButton = $(this);
+            if (loadButton.hasClass('selected')) {
+                return;
+            }
+
+            g_roiViewer.clear();
+            var label = $('#label_select').val();
+            
+            $('#roi_box').addClass('hidden');
+            $('#roi_button').removeClass('selected');
+            loadButton.addClass('selected');
+            loadButton.storeText = loadButton.text();
+            loadButton.text('loading...');
+
+            if ($(this).attr('id') == 'polygon_roi_load_button') {
+                var type = 'polygons';
+            } else {
+                var type = 'projections';
+            }
+
+            var url = '{{ url_for('.getRoiMasks', _external=True) }}';
+            var colorMode = 1;
+            if (label.match('^ica.*\.npz$|^opca.*\.npz')) {
+                var url = '{{ url_for('.getComponents', _external=True) }}';
+                colorMode = 0;
+            }
+            if (type == 'polygons') {
+                var url = '{{ url_for('.getRois', _external=True) }}';
+            }
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                cache: false,
+                data: {
+                    path: g_filePath,
+                    label: label,
+                }})
+                .done(function(response) {
+                    if (type == "polygons") {
+                        g_roiViewer.gl.rois = [];
+                        var roiLabels = Object.keys(response);
+                        g_roiViewer.storePolygonRoi(response, roiLabels, 0);
+                    } else {
+                        alert("mask type rois not currently implemented");
+                        return;
+                        roiContext = createProjectionContext('#roi_canvas');
+                        roiContext.uniform1i(roiContext.shaderProgram.colorModeUniform, colorMode);
+                        resizeBuffers(roiContext, g_frameViewer.width, g_fraemViewer.height)
+                        roiContext.frameViewer = false;
+                        roiContext.numberRois = response.num_rois;
+                        delete response.num_rois;
+                        roiContext.rois = response;
+                        setRoiMask(Object.keys(response)[0]);
+                        $('#roi_mode_button').removeClass('hidden');
+                    }
+                })
+                .always(function() {
+                    loadButton.text(loadButton.storeText);
+                    loadButton.removeClass('selected');
+                });
+        });
+
+
+        $('#increase_step_button').click(function() {
+            if (g_frameBuffer.frameDelta > 0) {
+                g_frameBuffer.set_frameDelta(g_frameBuffer.frameDelta*2)
+            } else if (g_frameBuffer.frameDelta == -1) {
+                g_frameBuffer.set_frameDelta(g_frameBuffer.frameDelta*-1)
+            } else {
+                g_frameBuffer.set_frameDelta(g_frameBuffer.frameDelta / 2)
+            }
+            $('#step_size_span').text(g_frameBuffer.frameDelta)
+
+            if (!fetching) {
+                fetching = true
+                fetchFrames()
+            }
+        });
+
+        $('#reduce_step_button').click(function() {
+            if (g_frameBuffer.frameDelta < 0) {
+                g_frameBuffer.set_frameDelta(g_frameBuffer.frameDelta * 2)
+            } else if (g_frameBuffer.frameDelta == 1) {
+                g_frameBuffer.set_frameDelta(g_frameBuffer.frameDelta * -1)
+            } else {
+                g_frameBuffer.set_frameDelta(g_frameBuffer.frameDelta / 2)
+            }
+            $('#step_size_span').text(g_frameBuffer.frameDelta)
+
+            if (!fetching) {
+                fetching = true
+                fetchFrames()
+            }
+        })
+
+        $('#single_step_button').click(function(){
+            if (!$(this).hasClass('selected')) {
+                $('.stepButton').addClass('selected');
+                fetchFrame(g_frameViewer.current + Math.abs(g_frameBuffer.frameDelta))
+            }
+        })
+
+        $('#single_reverse_button').click(function(){
+            if (!$(this).hasClass('selected')) {
+                $('.stepButton').addClass('selected');
+                fetchFrame(g_frameViewer.current - Math.abs(g_frameBuffer.frameDelta))
+            }
+        })
+        
+        $('#frame_slider').mousedown(function() {
+            $(this).addClass('moving')
+        })
+
+        $('#frame_slider').mouseup(function() {
+            $(this).removeClass('moving')
+            fetchFrame($('#frame_slider').val())
+        });
+
+        function fetchFrame(index) {
+            g_frameBuffer.set_next(index);
+            if (!g_frameBuffer.has_next($('#plane_select').val())) {
+                $.ajax({
+                    url: '{{ url_for('.getFrames', _external=True) }}',
+                    type: 'POST',
+                    cache: false,
+                    data: {
+                        frames: [index],
+                        planes: [$('#plane_select').val()],
+                        path: g_filePath,
+                        normingVal: g_normingVal,
+                        channel: g_frameViewer.channel,
+                        cycle: g_frameViewer.cycle,
+                        sequenceId: g_frameBuffer.sequenceId
+                    }
+                }).done(function(response) {
+                    if (response.sequenceId != g_frameBuffer.sequenceId) {
+                        return;
+                    }
+
+                    $('#indicator').show();
+                    $('#indicator').fadeOut(1000);
+
+                    g_frameBuffer.addFrames(response);
+                    g_frameBuffer.set_next(index);
+                    playFramesFromQueue(true);
+                    $('.stepButton').removeClass('selected');
+                    if (g_roiViewer.needsRender) {
+                        g_roiViewer.needsRender = false;
+                        g_roiViewer.render();
+                    }
+               });
+           } else {
+                playFramesFromQueue(true);
+                $('.stepButton').removeClass('selected');
+                if (g_roiViewer.needsRender) {
+                    g_roiViewer.needsRender = false;
+                    g_roiViewer.render();
+                }
+           }
+        }
+
+        $('.clearRoiButton').click(function() {
+            _save_editor_roi();
+            g_roiViewer.clear();
+        });
+
+        $('#volume_button').click(function() {
+            if($('#volume_button').hasClass('selected')) {
+                $('#volume_button').removeClass('selected');
+                g_frameViewer.setCurrentPlane(1);
+                return;
+            }
+            
+            if (g_frameBuffer.hasVolume()) {
+                $('#volume_button').addClass('selected');
+                if (g_frameViewer.getCurrentPlane() == 0) {
+                    g_frameViewer.setCurrentPlane(1);
+                }
+                return;
+            }
+
+            $('#volume_button').addClass('loading');
+            $.ajax({
+                url: '{{ url_for('.getFrames', _external=True) }}',
+                type: 'POST',
+                cache: false,
+                data: {
+                    frames: [g_frameBuffer.current],
+                    planes: g_frameViewer.numPlanes(),
+                    path: g_filePath,
+                    normingVal: g_normingVal,
+                    channel: g_frameViewer.channel,
+                    cycle: g_frameViewer.cycle,
+                    sequenceId: g_frameBuffer.sequenceId
+                }
+            }).done(function(response) {
+                $('#volume_button').removeClass('loading');
+                if (typeof response["frame_"+g_frameBuffer.current] !== "undefined") {
+                    $('#volume_button').addClass('loaded');
+                }
+                if (response.sequenceId != g_frameBuffer.sequenceId) {
+                    return;
+                }
+
+                $('#indicator').show();
+                $('#indicator').fadeOut(1000);
+
+                g_frameBuffer.addFrames(response);
+           });
+        });
+
+        $('#frame_number_span').click(function() {
+            $('#goto_box').removeClass('hidden');
+        });
+
+        $('#goto_cancel_button').click(function() {
+            $('#goto_box').addClass('hidden');
+        });
+
+        $('#goto_frame_button').click(function() {
+            fetchFrame($('#goto_frame_input').val()-1)
+            $('#goto_box').addClass('hidden');
+        });
+
+        $('#scroll_out_button').click(function() {
+            var e = jQuery.Event( "DOMMouseScroll",{originalEvent:{wheelDelta: -1}} );
+            $('#roi_canvas').trigger(e);
+        });
+
+        $('#scroll_in_button').click(function() {
+            var e = jQuery.Event( "DOMMouseScroll",{originalEvent:{wheelDelta: 1}} );
+            $('#roi_canvas').trigger(e);
+        });
+
+        $('#plane_select').change(function() {
+            g_roiViewer.needsRender = true;
+            fetchFrame(g_frameViewer.current);
+        });
+
+        $('#roi_mode_button').click(function() {
+            if ($(this).hasClass('selected')) {
+                $(this).removeClass('selected');
+            } else {
+                $(this).addClass('selected');
+            }
+        });
+
+        $('#roi_controls .arrowContainer').click(function() {
+            var control = $('#roi_controls')
+            if (control.hasClass('minified')) {
+                control.removeClass('minified');
+                $('#drawing_controls').removeClass('hidden');
+            } else {
+                control.addClass('minified');
+                $('#drawing_controls').addClass('hidden');
+            }
+        });
+
+        $('#roi_label_span').click(function() {
+            var setOptions = $('#roi_set_options');
+            if (setOptions.hasClass('hidden')) {
+                setOptions.removeClass('hidden');
+            } else {
+                setOptions.addClass('hidden');
+            }
+        });
+
+        function addRoiLabel(newLabel) {
+            var labelSelect = $('#label_select');
+            labelSelect.prop('disabled', true);
+            $.ajax({
+                url: '{{ url_for('.setRoiLabel', _external=True) }}',
+                type: 'POST',
+                cache: false,
+                data: {
+                    path: g_filePath,
+                    oldLabel: labelSelect.val(),
+                    newLabel: newLabel
+                }
+            }).done(function(html) {
+                labelSelect
+                    .html('')
+                    .html(html);
+                labelSelect.find('option[value="' + newLabel + '"]').prop('selected',true);
+            }).always(function() {
+                labelSelect.prop('disabled', false);
+            });
+        }
+
+
+        $('#set_roi_label_button').click(function() {
+            g_roiViewer.clear();
+            addRoiLabel($('#roi_label_input').val().replace(/\s+/g, ''));
+            $('#roi_label_input').val('')
+        });
+
+
+        $('#delete_roi_label_button').click(function() {
+            var deleteButton = $(this)
+            if (deleteButton.hasClass('selected')) {
+                return;
+            }
+            deleteButton.addClass('selected')
+            var selected_value = $('#label_select').val()
+            $('#label_select option[value="' + selected_value + '"]').remove();
+            
+            $.ajax({
+                url: '{{ url_for('.deleteRoiSet', _external=True) }}',
+                type: 'POST',
+                cache: false,
+                data: {
+                    path: g_filePath,
+                    label: selected_value
+                }
+            }).done(function() {
+
+            }).always(function() {
+                deleteButton.removeClass('selected');
+            });
+        });
+
+        $('.handleButtonClick').click(_handle_button_click);
+
+        function _add_marker(left, top, id) {
+            if ((!left) || (!top) || 
+                (left >= g_frameViewer.glContext.viewportWidth) ||
+                (top >= g_frameViewer.glContext.viewportHeight)) {
+                return;
+            }
+
+            return $('#editable_point_template').clone(true)
+                                         .removeClass('hidden')
+                                         .attr('id',id)
+                                         .appendTo('.canvasContainer')
+                                         .addClass('active')
+                                         .css('left',left)
+                                         .css('top',top);
+        }
+
+        function _update_roi(roi) {
+            $.ajax({
+                url: '{{ url_for('.updateRoi', _external=True) }}',
+                type: 'POST',
+                cache: false,
+                data: {
+                    path: g_filePath,
+                    label: $('#label_select').val(),
+                    points: JSON.stringify(roi.points),
+                    roiLabel: roi.label,
+                    roiId: roi.id
+                }
+            }).done(function() {
+            }).fail(function() {
+                alert('there was an error updating the ROI set');
+            }).always(function() {
+            });
+        }
+
+        //TODO: group roi editor module (?)
+        function _save_editor_roi() {
+            if (!g_roiEditor.rois.length) {
+                return;
+            }
+
+            var roi = g_roiEditor.popRoi();
+            roi.label = $('#drawing_label').val();
+            g_roiViewer.addRoi(roi);
+            roi.infoTab.removeClass('selected');
+            _update_roi(roi);
+            $('#drawing_id').text('');
+            $('#drawing_label').val('');
+            $('#draw_roi_button').removeClass('selected');
+            $('.roiEditButton').addClass('disabled');
+            $('.roiEditButton.selected').map(function(){
+                ButtonClickEvents[this.id].deselect($(this));
+                $(this).removeClass('selected');
+            });
+        }
+
+        //TODO: group roi editor module (?)
+        function _edit_roi(roi) {
+            _save_editor_roi();
+
+            g_roiEditor.addRoi(roi);
+            $('.roiTab').removeClass('selected');
+            roi.infoTab.addClass('selected');
+            $('#drawing_id').text(roi.id);
+            $('#drawing_label').val(roi.label);
+            $('.roiEditButton').removeClass('disabled');
+        }
+
+        ButtonClickEvents = {
+            'draw_roi_button': {
+                'deselect': function() {
+                    g_frameViewer.allowDrag = true;
+                    g_roiEditor.mouseClickHandler = undefined;
+                    g_roiEditor.mouseDragHandler = undefined;
+                },
+                'select': function() {
+                    if ($('#label_select').val() === "") {
+                        var newLabel = Date.now();
+                        addRoiLabel(newLabel);
+                    }
+
+                    g_frameViewer.allowDrag = false;
+                    if (!g_roiEditor.rois.length) {
+                        var color = tinycolor({h:Math.random()*360.0, s:65, v:50}).toRgb();
+                        color.r /= 255;
+                        color.g /= 255;
+                        color.b /= 255;
+
+                        var newRoi = new roi(Date.now(),color);
+                        _edit_roi(newRoi)
+                    }
+                    g_roiEditor.mouseClickHandler = MouseHandlers.drawRoi;
+                    g_roiEditor.mouseDragHandler = MouseHandlers.drawRoi;
+                }
+            },
+
+            'simplify_roi_button': {
+                'deselect': function(b) {
+                    b.addClass('selected');
+                },
+                'select': function(b) {
+                    var roi = g_roiEditor.rois[0];
+                    $.ajax({
+                        url: '{{ url_for('.simplifyRoi', _external=True) }}',
+                        type: 'POST',
+                        cache: false,
+                        data: {
+                            path: g_filePath,
+                            frame_shape: JSON.stringify([g_frameViewer.numPlanes(),
+                                g_frameViewer.height, g_frameViewer.width]),
+                            points: JSON.stringify(roi.points),
+                            roiId: roi.id
+                        }
+                    }).done(function(response) {
+                        var roiLabels = Object.keys(response);
+                        g_roiEditor.popRoi(roi.id);
+                        g_roiEditor.storePolygonRoi(response, roiLabels, 0);
+                        g_roiEditor.rois[0].label = $('#drawing_label')
+                    }).fail(function() {
+                        alert('there was an error updating the ROI set');
+                    }).always(function() {
+                        b.removeClass('selected');
+                    });   
+                }
+            },
+
+            'select_roi_button': {
+                'deselect': function() {
+                    g_frameViewer.allowDrag = true;
+                    g_roiEditor.mouseClickHandler = undefined;
+                },
+                'select': function() {
+                    g_frameViewer.allowDrag = false;
+                    g_roiEditor.mouseClickHandler = MouseHandlers.selectRoi;
+                }
+            },
+
+            'edit_roi_button': {
+                'deselect': function() {
+                    $('.editablePoint.active').remove();
+                    g_frameViewer.allowDrag = true;
+                    document.onmousemove = undefined;
+                },
+                'select': function() {
+                    g_frameViewer.allowDrag = false;
+                    
+                    var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
+                    g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
+
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startX,
+                            point[0]/g_frameViewer.width);
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startY, 
+                            1-point[1]/g_frameViewer.height);
+                        drawColorMap(positioningContext, 0);
+
+                        var canvas = $('#positioning_canvas');
+                        var height = canvas.height();
+                        var width = canvas.width();
+                        var pixelValues = new Uint8Array(height*width*4);
+                        positioningContext.readPixels(0, 0, width, height,
+                            positioningContext.RGBA, positioningContext.UNSIGNED_BYTE,
+                            pixelValues);
+
+                        var i = 0;
+                        for (; i < pixelValues.length; i+=4) {
+                            if (pixelValues[i] != 0) break;
+                        }
+
+                        _add_marker((i/4)%width, height-Math.floor(i/4/width), ('vert_' + idx))
+
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startX, 0);
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startY, 0);
+                        drawColorMap(positioningContext, 0);
+                    });
+
+                    document.onmousemove = MouseHandlers.editRoi;    
+                }
+            },
+
+            'delete_roi_button': {
+                'deselect': function(b) {
+                    b.addClass('selected');
+                },
+                'select': function(b) {
+                    $.ajax({
+                        url: '{{ url_for('.deleteRoi', _external=True) }}',
+                        type: 'POST',
+                        cache: false,
+                        data: {
+                            path: g_filePath,
+                            label: $('#label_select').val(),
+                            roiId: g_roiEditor.rois[0].id
+                        }
+                    }).done(function() {
+                        $('#drawing_id').text('');
+                        $('.roiEditButton').addClass('disabled');
+                        var roi = g_roiEditor.rois.pop();
+                        roi.infoTab.detach();
+                        g_roiEditor.render();
+
+                        if ($('#draw_roi_button').hasClass('selected')) {
+                            $('#draw_roi_button').removeClass('selected');
+                            ButtonClickEvents['draw_roi_button'].deselect()
+                        }
+                    }).fail(function() {
+                        alert('there was an error updating the ROI set');
+                    }).always(function() {
+                        b.removeClass('selected');
+                    });
+                }
+            },
+
+            'move_roi_button': {
+                'deselect': function() {
+                    g_frameViewer.allowDrag = true;
+                    g_roiEditor.mouseDragHandler = undefined;
+                },
+                'select': function() {
+                    g_frameViewer.allowDrag = false;
+                    g_roiEditor.mouseDragHandler = MouseHandlers.translateRoi;
+                }
+            },
+
+            'save_roi_button': {
+                'deselect': function(b) {
+                    b.addClass('selected');
+                },
+                'select': function(b) {
+                    _save_editor_roi();
+
+                    //TODO: hold selected until ROI is saved on server
+                    b.removeClass('selected');
+                }
+            }
+        }
+
+        function _handle_button_click(e) {
+            var button = $(e.target);
+            if (button.hasClass('disabled')) {
+                return;
+            }
+
+            if ($(e.target).hasClass('selected')) {
+                button.removeClass('selected');
+                ButtonClickEvents[e.target.id].deselect(button)
+            } else {
+                button.addClass('selected');
+                ButtonClickEvents[e.target.id].select(button);
+            }
+        }
+
+        
+        MouseHandlers = {
+            'selectRoi': function(x, y) {
+                var button = $('#select_roi_button');
+                if (button.hasClass('disabled')) {
+                    return;
+                }
+
+                //TODO: use webgl to pick in client with out ajax call
+                button.addClass('disabled');
+                $.ajax({
+                    url: '{{ url_for('.selectRoi', _external=True) }}',
+                    type: 'POST',
+                    cache: false,
+                    data: {
+                        path: g_filePath,
+                        label: $('#label_select').val(),
+                        x: x,
+                        y: y,
+                        z: (g_frameViewer.getCurrentPlane()-1)
+                    }})
+                    .done(function(response) {
+                        button.removeClass('selected');
+                        ButtonClickEvents['select_roi_button'].deselect(button)
+
+                        var roi = g_roiViewer.popRoi(response.id);
+                        if (typeof(roi) !== 'undefined'){
+                            _edit_roi(roi);
+                        }
+                    })
+                    .always(function() {
+                        button.removeClass('disabled');
+                    });
+            },
+
+           'drawRoi': function(x, y, e) {
+                if (g_frameViewer.getCurrentPlane() == 0) {
+                    for (plane_idx = 0; plane_idx < g_frameViewer.numPlanes(); plane_idx++) {
+                        g_roiEditor.rois[0].addPoint(
+                            g_roiEditor.gl,plane_idx,0,[x,y]);
+                    }
+                } else {
+                    g_roiEditor.rois[0].addPoint(
+                        g_roiEditor.gl,g_frameViewer.getCurrentPlane()-1,0,[x,y]);
+                }
+
+                g_roiEditor.render();
+            },
+
+            'translateRoi': function(x,y,prev_x,prev_y) {
+                if (!g_roiEditor.rois.length) {
+                    return;
+                }
+                
+                var roi = g_roiEditor.rois[0];
+                if (typeof(roi) !== "undefined") {
+                    var points = roi.points;
+                    var plane = g_frameViewer.getCurrentPlane()-1;
+                    var planes = []
+                    if (plane != -1) {
+                        planes = [plane]
+                    } else {
+                        planes = Array(g_frameViewer.numPlanes()).fill().map((x,i)=>i)
+                    }
+
+                    planes.map(function(plane) {
+                        var dx = x-prev_x;
+                        var dy = y-prev_y
+                        points[plane].map(function(e,a,i) {
+                            e.map(function(e2,a2,i2){
+                                e2[0] += dx;
+                                e2[1] += dy;
+                            });
+                        });
+                        roi.setPoints(g_roiEditor.gl,points);
+                        g_roiEditor.render();
+                    });
+                }
+            },
+
+            'editRoi': function(e) {
+                x_pos = document.all ? window.event.clientX : e.pageX;
+                y_pos = document.all ? window.event.clientY : e.pageY;
+                if (selected !== null) {
+                    selected.style.left = (x_pos - x_elem) + 'px';
+                    selected.style.top = (y_pos - y_elem) + 'px';
+
+                    var parentOffset = $('.canvascontainer').offset();
+                    var offsetY = $('#roi_editing_canvas').height() - selected.offsetTop;
+                    var offsetX = selected.offsetLeft;
+
+                    var pixelValues = new Uint8Array(4);
+                    positioningContext.readPixels(offsetX, offsetY, 1, 1, positioningContext.RGBA,
+                        positioningContext.UNSIGNED_BYTE, pixelValues);
+
+                    var transXval = pixelValues[0]*g_frameViewer.width/255;
+                    var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
+
+                    var newPoints = g_roiEditor.rois[0].points;
+                    
+                    var plane = g_frameViewer.getCurrentPlane()-1;
+                    if (plane < 0) {
+                        newPoints.map(function(_, idx, arr) {
+                            arr[idx][0][selected.id.substr(5)] = [transXval, transYval];
+                        });
+                    } else {
+                        newPoints[plane][0][selected.id.substr(5)] = [transXval, transYval];
+                    }
+                    g_roiEditor.rois[0].setPoints(g_roiEditor.gl, newPoints);
+                    g_roiEditor.render();
+
+                }
+            }
+        }
+
+        KeyboardHandlers = {
+            'roiDrawingMode': function(e) {
+                if (e.keyCode == 78) {
+                    var color = tinycolor({h:1*360.0/10, s:65, v:50}).toRgb();
+                    color.r /= 255;
+                    color.g /= 255;
+                    color.b /= 255;
+
+                    var newRoi = new roi(Date.now(),color);
+                    _edit_roi(newRoi);
+
+                } else if (e.keyCode == 83) {
+                    //TODO:implement multi segment roi drawing
+                } else if (e.keyCode == 68) {
+                    delete g_roiEditor.rois[0]
+                    g_roiEditor.render();
+                }
+            },
+
+            'roiMaskMode': function(e) {
+                var rois = Object.keys(roiContext.rois);
+                var currentIndex = Math.max(0,rois.indexOf(roiContext.current));
+                if ([37,38].indexOf(e.keyCode) != -1) {
+                    e.preventDefault();
+                    setRoiMask(rois[Math.max(0,currentIndex-1)]);
+                } else if ([39,40].indexOf(e.keyCode) != -1) {
+                    e.preventDefault();
+                    setRoiMask(rois[Math.min(rois.length-1,currentIndex+1)]);
+                }
+            },
+
+            'frameViewer': function(e) {
+                e.preventDefault();
+                if ((e.keyCode == 38)) {
+                    g_frameViewer.setCurrentPlane(g_frameViewer.getCurrentPlane()-1);
+                } else if(e.keyCode == 40) {
+                    g_frameViewer.setCurrentPlane(g_frameViewer.getCurrentPlane()+1);
+                } else if (e.keyCode == 37) {
+                    $('#single_reverse_button').trigger('click');
+                } else if (e.keyCode == 39) {
+                    $('#single_step_button').trigger('click');
+                }
+
+                if ((e.charCode == 32)||(e.keyCode == 32)) {
+                    if (!g_frameViewer.isPlaying()) {
+                        $('#start_button').trigger('click');
+                    } else {
+                        $('#stop_button').trigger('click');
+                    }
+                }
+            }
+        }
+
+        $(document).keydown(function(e) {
+            if ($('input').is(':focus')) return;
+
+            if ($('#roi_mode_button').hasClass('selected')) {
+                alert('roi mode currently not implemented');
+                KeyboardHandlers.roiMaskMode(e);
+                return;
+            } else if ($('#draw_roi_button').hasClass('selected')) {
+                KeyboardHandlers.roiDrawingMode(e);
+            }
+
+            KeyboardHandlers.frameViewer(e)
+        });
+
+        $('#roi_editing_canvas').click(function(e) {
+            drawColorMap(positioningContext, 0);
+            var parentOffset = $(this).parent().offset();
+            var relX = e.pageX - parentOffset.left;
+            var relY = $(this).height() - (e.pageY - parentOffset.top);
+            
+            var pixelValues = new Uint8Array(4);
+            positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
+                positioningContext.UNSIGNED_BYTE, pixelValues);
+
+            if (pixelValues[2] != 0) {
+                var transXval = pixelValues[0]*g_frameViewer.width/255;
+                var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
+            }
+
+            if (typeof(g_roiEditor.mouseClickHandler) !== 'undefined') {
+                g_roiEditor.mouseClickHandler(transXval, transYval, e);
+            }
+
+        });
+
+        $('#roi_editing_canvas').bind('mousedown', function() {
+            this.mouseDown = true;
+        });
+
+        $('#roi_editing_canvas').bind('mouseup', function() {
+            this.mouseDown = false;
+            this.prevPoint = undefined;
+        });
+
+        $('#roi_editing_canvas').mousemove(function(e){
+            if (this.mouseDown) {
+                drawColorMap(positioningContext, 0);
+                var parentOffset = $(this).parent().offset();
+                var relX = e.pageX - parentOffset.left;
+                var relY = $(this).height() - (e.pageY - parentOffset.top);
+                
+                var pixelValues = new Uint8Array(4);
+                positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
+                    positioningContext.UNSIGNED_BYTE, pixelValues);
+
+                if (pixelValues[2] != 0) {
+                    var transXval = pixelValues[0]*g_frameViewer.width/255;
+                    var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
+                    
+                    if ((typeof(g_roiEditor.mouseDragHandler) !== 'undefined') &&
+                            (typeof(this.prevPoint) !== 'undefined')) {
+                        g_roiEditor.mouseDragHandler(transXval,transYval,
+                            this.prevPoint[0],this.prevPoint[1], e);
+                    }
+                    this.prevPoint = [transXval,transYval];
+                }
+            }
+        });
+
+        $('#positioning_canvas').click(function(e) {
+            drawColorMap(positioningContext, 0);
+            var parentOffset = $(this).parent().offset();
+            var relX = e.pageX - parentOffset.left;
+            var relY = $(this).height() - (e.pageY - parentOffset.top);
+            
+            var pixelValues = new Uint8Array(4);
+            positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA, positioningContext.UNSIGNED_BYTE, pixelValues);
+            console.log(pixelValues[0] + ' ' + pixelValues[1] + ' ' + pixelValues[2]);
+        });
+
+        var selected = null,
+            x_pos = 0, y_pos = 0,
+            x_elem = 0, y_elem = 0;
+
+        function _drag_init(elem) {
+            selected = elem;
+            x_elem = x_pos - selected.offsetLeft;
+            y_elem = y_pos - selected.offsetTop;
+        }
+
+        $('.editablePoint').bind('mousedown', function() {_drag_init(this)});
+        
+        $('.editablePoint').bind('mouseup', function () {
+            selected = null;
+        });
+
+    </script>
+
+</body>
+
+</html>

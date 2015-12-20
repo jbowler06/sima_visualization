@@ -1,0 +1,352 @@
+body,html {
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    color: #F00;
+}
+.canvasContainer {
+    margin: auto auto;
+    display: block;
+    position: relative;
+    width: 800px;
+}
+.webGlCanvas {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+#gl_canvas {
+}
+#roi_canvas {
+}   
+#positioning_canvas {
+    display: none;
+}
+.floatLeft {
+    float: Left;
+}
+.floatRight {
+    float: Right;
+}
+.warningBox {
+    text-align:center;
+    color: #0F0;
+    padding: 15px;
+    width: 100px;
+    height: 50px;
+    margin-top: 20px;
+}
+.warningBox span {
+    text-height: 20px;
+}
+.largeLabel {
+    text-align:center;
+    color: #0F0;
+    padding: 15px;
+    width: 100px;
+    height: 50px;
+    margin-top: 20px;
+}
+.largeLabel span {
+    text-height:20px;
+    font-size: 40px;
+}
+.smallLabel {
+    margin: -20px 0px 20px 20px;
+}
+.smallLabel span {
+    text-height:10px;
+    font-size: 18px;
+    color: #0F0;
+}
+.button {
+    text-align:center;
+    color: #0F0;
+    padding: 15px;
+    width: 100px;
+    height: 20px;
+    border: thin solid #0F0;
+
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
+.button span {
+    text-height:20px;
+}
+.button:hover, #frame_number_span:hover {
+    background-color: #555;
+    cursor: pointer;
+}
+.button.disabled {
+    color: #500;
+    background-color: #222;
+}
+.selected {
+    background-color: #555;
+}
+.button.selected {
+    cursor: default;
+}
+.button.smallButton {
+    width: 20px;
+    padding: 4px;
+}
+.button.halfButton {
+    width: 35px;
+}
+.slim {
+    height: 20px !important;
+    padding: 2px !important;
+    width: 61px !important;
+}
+.slim span {
+    height 5px; !important
+}
+.indicator {
+    height: 20px;
+    width: 20px;
+    background-color: #007500;
+    border-radius: 50%;
+    display: none;
+}
+.controls {
+    display: block;
+    position: absolute;
+    z-index: 10;
+}
+.loadBox {
+    position: absolute;
+    display: block;
+    z-index: 100;
+    background-color: #000;
+    color: #0F0;
+    width: 450px;
+    border: thin solid #0F0;
+    padding: 10px 40px;
+}
+.frame_slider {
+    margin: 0px;
+}
+.hidden {
+    display: None;
+}
+.loadBox p {
+    margin: 5px;
+    padding: 0px;
+    float: left;
+    width:100%
+}
+.loadBox input {
+    line-height:2;
+    width: 300px;
+}
+.loadBox select{
+    line-height:2;
+    min-width: 300px;
+    margin: 5px 0px;
+}
+.loadBox table {
+    color: #0F0;
+}
+.loadBox td {
+    padding: 5px 15px;
+}
+.loadBox table input {
+    width: 75px;
+}
+.loadBox table select {
+    min-width: 150px;
+}
+input.norming_value_input{
+    width: 75px;
+    line-height: 1;
+    margin-left: 10px;
+}
+.width100 {
+    width: 100%;
+}
+.height100 {
+    height: 100%;
+}
+#volume_button.loading {
+    color: #FFA500;
+}
+#volume_button.loaded {
+    background-color: #0F0;
+    color: #000;
+}
+#volume_button.loaded.selected {
+    background-color: #0F0;
+    color: #555;
+}
+#volume_button.loaded:hover {
+    color: #555;
+}
+#plane_select {
+    width:133px;
+}
+
+#roi_controls {
+    height: 350px;
+    width: 250px;
+    position: absolute;
+    right: 0px;
+    z-index: 10;
+    background-color: #000;
+
+    border: thin solid #0F0;
+    top: 100px;
+}
+
+.roiTab {
+    border: thin solid #0F0;
+    height: 50px;
+    overflow: hidden;
+}
+
+.roiTabLabel {
+    width: 125px;
+}
+
+.roiTab div {
+    margin: 10px;
+}
+
+.roiTab .button {
+    color: #F00;
+}
+
+.roiTab .button.loaded {
+    color: #0F0;
+}
+
+.roiTab .button.loaded.viewing {
+    color: #000;
+    background-color: #0F0;
+}
+
+.roiTab.selected {
+    background-color: #500;
+}
+
+#roi_control_heading .button {
+    margin: 0px 10px;
+}
+
+#roi_controls.minified {
+    width: 15px;
+}
+
+#roi_controls .controlContainer {
+    height:330px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.arrowContainer {
+    width: 100%;
+}
+
+#roi_controls.minified .arrowContainer {
+    height: 100%;
+}
+
+.arrowContainer:hover {
+    background-color: #555;
+    cursor: pointer;
+
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
+
+#roi_controls.minified .controlContainer {
+    visibility: hidden;
+}
+
+#roi_controls.minified .arrowIn {
+    display: none;
+}
+
+#roi_controls .arrowOut {
+    display: none;
+}
+
+#roi_controls.minified .arrowOut {
+    display: inherit;
+}
+
+#roi_set_options {
+    border: 1px solid #0F0;
+    background-color: #000;
+    position: fixed;
+    margin-top: 32px;
+}
+
+.selectable:hover {
+    background-color: #555;
+    cursor: pointer;
+
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
+
+.tableButton:hover {
+    background-color: #555;
+    cursor: pointer;
+
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
+
+#roi_label_span {
+    font-size: 10px;
+    width: 147px;
+}
+
+#label_select {
+    width: 125px;
+}
+
+#drawing_controls {
+    width: 250px;
+    height: 200px;
+    right: 0px;
+    bottom: 0px;
+    position: absolute;
+    border: 1px solid #fff;
+    z-index: 10;
+    background-color: #000;
+
+}
+
+.editablePoint {
+    width: 0px;
+    height: 0px;
+    cursor: move;
+    z-index: 100;
+    position: relative; 
+    float: left;
+    overflow: visible;
+}
+
+.editableImageContainer {
+    width: 10px;
+    height: 10px;
+    background-image: url(../images/red-circle.png);
+    background-size: 10px 10px;
+    background-repeat: no-repeat;
+    position: relative;
+    left: -5px;
+    top: -5px;
+}
