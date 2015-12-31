@@ -1628,7 +1628,10 @@
             _update_roi(roi);
             $('#drawing_id').text('');
             $('#drawing_label').val('');
-            $('#draw_roi_button').removeClass('selected');
+            if ($('#draw_roi_button').hasClass('selected')) {
+                $('#draw_roi_button').removeClass('selected');
+                ButtonClickEvents.draw_roi_button.deselect;
+            }
             $('.roiEditButton').addClass('disabled');
             $('.roiEditButton.selected').map(function(){
                 ButtonClickEvents[this.id].deselect($(this));
@@ -1810,6 +1813,7 @@
             'save_roi_button': {
                 'deselect': function(b) {
                     b.addClass('selected');
+
                 },
                 'select': function(b) {
                     _save_editor_roi();
