@@ -441,14 +441,21 @@
         precision mediump float;
 
         varying vec2 vTextureCoord;
-        uniform sampler2D uSampler;
+        uniform sampler2D uSampler[4];
+        uniform sampler2D uSampler1;
         uniform int num_channels;
         uniform int uColorMode;
         uniform float roiOpacity;
         
         void main(void) {
+            const int nframes = 4;
             if (num_channels == 1) {
-                vec4 myTex = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+                vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t));
+                for (int i = 1; i < nframes; i++)
+                {
+                    myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t)));
+                }
+                myTex /= float(nframes);
                 //if ((myTex.r == 1.0)||(roiOpacity != 0.0)) {
                 if (roiOpacity != 0.0) {
                     if (uColorMode == 0) {
@@ -475,8 +482,8 @@
                     gl_FragColor = vec4(myTex.rgb, 1.0);
                 }
             } else {
-                vec4 channel1 = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t + 0.5));
-                vec4 channel2 = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+                vec4 channel1 = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t + 0.5));
+                vec4 channel2 = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t));
                 if (vTextureCoord.t < 0.5) {
                     gl_FragColor = vec4(channel1.s,channel2.s,0.0,0.0);
                 } else {
@@ -532,7 +539,8 @@
 
             shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix")
             shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix")
-            shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler")
+            shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler[0]")
+            gl.uniform1iv(shaderProgram.samplerUniform, [0,1,2,3])
 
             shaderProgram.channelsUniform = gl.getUniformLocation(shaderProgram, "num_channels")
             shaderProgram.colorModeUniform = gl.getUniformLocation(shaderProgram, "uColorMode")
@@ -570,7 +578,7 @@
             var translate_x = g_frameViewer.mainProjectionWidth/2 + 0.35;
             var offset = g_frameViewer.offset;
 
-            gl.uniform1i(gl.shaderProgram.samplerUniform, 0)
+            gl.uniform1i(gl.shaderProgram.samplerUniform1, 1)
             gl.uniform1i(gl.shaderProgram.channelsUniform, num_channels)
             if (gl.canvas==$('#gl_canvas')[0]) {
                 gl.uniform1f(gl.shaderProgram.roiOpacity, 0)
@@ -590,11 +598,12 @@
             gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
                     zProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
 
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, zProjection.texture)
+            zProjection.textureQueue.map(function(e,i,a) {
+                gl.activeTexture(gl.TEXTURE0 + i);
+                gl.bindTexture(gl.TEXTURE_2D, e);
+            });
             
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, zProjection.vertexPositionBuffer.numItems)
-
 
             mat4.translate(mvMatrix, [translate_x, 0.0, 0.0])
             setMatrixUniforms(gl)
@@ -605,8 +614,10 @@
             gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
                     xProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
 
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, xProjection.texture)
+            xProjection.textureQueue.map(function(e,i,a) {
+                gl.activeTexture(gl.TEXTURE0 + i);
+                gl.bindTexture(gl.TEXTURE_2D, e);
+            });
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, xProjection.vertexPositionBuffer.numItems)
 
@@ -621,8 +632,10 @@
             gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
                     yProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
 
-            gl.activeTexture(gl.TEXTURE0)
-            gl.bindTexture(gl.TEXTURE_2D, yProjection.texture)
+            yProjection.textureQueue.map(function(e,i,a) {
+                gl.activeTexture(gl.TEXTURE0 + i);
+                gl.bindTexture(gl.TEXTURE_2D, e);
+            });
             
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, yProjection.vertexPositionBuffer.numItems)
         }
@@ -656,38 +669,46 @@
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, gl.squareVertexPositionBuffer.numItems);
         }
 
-
         function createProjectionContext(canvas_id) {
             var gl = initGL($(canvas_id)[0]);
             gl.render = function() {drawScene(this)};
             initShaders(gl, 'shader-fs')
             gl.projections = {}
 
+            var length = 4;
             gl.projections.zProjection = {
                 vertexPositionBuffer: 
                     createSquareVertexPositionBuffer(gl,2.0,2.0),
                 textureCoordBuffer: createTextureCoordBuffer(gl),
-                texture: gl.createTexture()
             }
-            gl.projections.zProjection.texture.image = new Image()
+            gl.projections.zProjection.textureQueue = Array.apply(null, {'length': length})
+                    .map(function(e,i,a) {
+                        var tex = gl.createTexture();
+                        tex.image = new Image();
+                        tex.image.onload = function() {imageOnload(gl, i)};
+                        return tex});
 
             gl.projections.xProjection = {
                 vertexPositionBuffer: 
                     createSquareVertexPositionBuffer(gl,0.5,2.0),
                 textureCoordBuffer: createTextureCoordBuffer(gl),
-                texture: gl.createTexture()
             }           
-            gl.projections.xProjection.texture.image = new Image()
-
+            gl.projections.xProjection.textureQueue = Array.apply(null, {'length': length})
+                    .map(function(e,i,a) {
+                        var tex = gl.createTexture();
+                        tex.image = new Image();
+                        return tex});
+            
             gl.projections.yProjection = {
                 vertexPositionBuffer: 
                     createSquareVertexPositionBuffer(gl,2.0,0.5),
                 textureCoordBuffer: createTextureCoordBuffer(gl),
-                texture: gl.createTexture()
             }           
-            gl.projections.yProjection.texture.image = new Image()
-
-            gl.projections.zProjection.texture.image.onload = function(){imageOnload(gl)};
+            gl.projections.yProjection.textureQueue = Array.apply(null, {'length': length})
+                    .map(function(e,i,a) {
+                        var tex = gl.createTexture();
+                        tex.image = new Image();
+                        return tex});
 
             gl.clearColor(0.0, 0.0, 0.0, 1.0)
             gl.enable(gl.DEPTH_TEST)
@@ -758,14 +779,19 @@
             positioningContext = createPositioningContext('#positioning_canvas');
         });
 
-      
+        //TODO: seperate out displaying frame average
         function playFramesFromQueue(forceStep) {
-            var min = g_frameBuffer.keys[0]
-            var max = g_frameBuffer.maxSortedIndex
-            $('#buff_min').text(g_frameBuffer.keys[0])
-            $('#buff_max').text(g_frameBuffer.maxSortedIndex)
-            var nextFrame = g_frameBuffer.next()
-            if (g_frameBuffer.has_next($('#plane_select').val())) {
+            var min = g_frameBuffer.min();
+            var max = g_frameBuffer.max();
+            $('#buff_min').text(min);
+            $('#buff_max').text(max);
+            var nextFrame = g_frameBuffer.next();
+
+            var numFrames = 4;
+            if (nextFrame == -1) {
+                numFrames = 1;
+            }
+            if (g_frameBuffer.has_next($('#plane_select').val(),numFrames)) {
                 if (g_frameViewer.isPlaying() || forceStep) {
                     $('#buff_curr').text(nextFrame)
                     g_frameViewer.current = nextFrame;
@@ -785,7 +811,25 @@
 
                     if (!thisFrame) debugger;
                     
-                    g_frameViewer.setFrame(thisFrame);
+                    //TODO: declare dims somewher else?
+                    dims = ['x','y','z'];
+                    if (nextFrame == -1) {
+                        dims.map(function(dim) {
+                            g_frameViewer.glContext.projections[dim+'Projection']
+                                .textureQueue.map(function(e,i,a) {
+                                    e.image.src = thisFrame[dim];
+                                });
+                        });
+                    } else {
+                        dims.map(function(dim) {
+                            g_frameViewer.glContext.projections[dim+'Projection']
+                                .textureQueue.map(function(e,i,a) {
+                                    e.image.src = g_frameBuffer.peekFrame(
+                                        nextFrame+i,g_frameViewer.getCurrentPlane())[dim];
+                                });
+                        });
+                    }
+
                     $('#this_frame_label').text(parseInt(nextFrame)+1)
 
                     setTimeout(function(){playFramesFromQueue()}, g_frameViewer.frameDelay)
@@ -793,7 +837,9 @@
                     if (!fetching && !g_frameBuffer.isFull()) {
                         fetching = true
                         $('#buffering_warning').text('')
-                        fetchFrames()
+                        for (var i=0; i < 4; i++) {
+                            fetchFrames();
+                        }
                     }
                 }
             } else {
@@ -801,7 +847,9 @@
                 g_frameViewer.setPlaying(false);
                 if (!fetching) {
                     fetching = true
-                    fetchFrames()
+                    for (var i=0; i < 4; i++) {
+                        fetchFrames();
+                    }
                 }
             }
         }
@@ -810,7 +858,8 @@
         function fetchFrames() {
             if (fetching) {
                 if (!g_frameBuffer.isFull()) {
-                    var frames = g_frameBuffer.next_request(g_packetSize,g_frameViewer.getCurrentPlane())
+                    var frames = g_frameBuffer.next_request(
+                        g_packetSize,g_frameViewer.getCurrentPlane())
                     if (frames.length <= 0) {
                         fetching=false;
                         return;
@@ -842,8 +891,8 @@
                         
                         g_frameBuffer.addFrames(response)
 
-                        $('#buff_min').text(g_frameBuffer.keys[0])
-                        $('#buff_max').text(g_frameBuffer.maxSortedIndex)
+                        $('#buff_min').text(g_frameBuffer.min())
+                        $('#buff_max').text(g_frameBuffer.max())
                         $('#buff_curr').text(g_frameBuffer.current)
                         if (response.end != true) {
                             fetchFrames() 
@@ -862,29 +911,34 @@
              }
         }
 
+
         //TODO: is it possible for z projection to finish loading before x and y?
         //this function may need to be called by a different trigger
-       function imageOnload(context) {
-            updateTextureData(context, context.projections.zProjection.texture,true)
-            updateTextureData(context, context.projections.xProjection.texture,true)
-            updateTextureData(context, context.projections.yProjection.texture,true)
-            context.render();
-
-            //
-            //THIS IS FOR SAVING THE CANVAS AS PNG FILES
-            //
-            /*var c = document.getElementById('gl_canvas')
-            var p = c.toDataURL()
-            $.ajax({
-                url: '{{ url_for('.saveImage', _external=True) }}',
-                type: 'POST',
-                cache: false,
-                data: {
-                    image: p.replace(/^data:image\/(png|jpg);base64,/, ""),
-                    filename: 'frame_'+g_viewerFrame+'.png'
+       function imageOnload(context, i) {
+            updateTextureData(context, context.projections.zProjection.textureQueue[i],true)
+            updateTextureData(context, context.projections.xProjection.textureQueue[i],true)
+            updateTextureData(context, context.projections.yProjection.textureQueue[i],true)
+            if (i == context.projections.zProjection.textureQueue.length-1) {
+                context.render();
+                if (false) {
+                    //THIS IS FOR SAVING THE CANVAS AS PNG FILES
+                    //
+                    var c = document.getElementById('gl_canvas')
+                    var p = c.toDataURL()
+                    $.ajax({
+                        url: '{{ url_for('.saveImage', _external=True) }}',
+                        type: 'POST',
+                        cache: false,
+                        data: {
+                            image: p.replace(/^data:image\/(png|jpg);base64,/, ""),
+                            filename: 'frame_'+g_frameViewer.current+'.png'
+                        }
+                    }).done(function(response){
+                    });
                 }
-            }).done(function(response){
-            })*/
+            }
+
+
             
         }
 
@@ -1056,8 +1110,8 @@
                 g_frameViewer.createTextureBuffers();
             }
 
-            //$('#buff_min').text(g_frameBuffer.minKey)
-            //$('#buff_max').text(g_frameBuffer.maxSortedIndex)
+            $('#buff_min').text(g_frameBuffer.min());
+            $('#buff_max').text(g_frameBuffer.max());
             $('#buff_curr').text(g_frameBuffer.current)
 
             if (g_filePath.slice(-4) == 'sima') {
@@ -1065,7 +1119,9 @@
             } else {
                 fetchFrame(0);
             }
-            fetchFrames();
+            for (var i = 0; i < 4; i++) {
+                fetchFrames();
+            }
         }
 
         function fileSelection(file) {
@@ -1377,7 +1433,7 @@
 
         function fetchFrame(index) {
             g_frameBuffer.set_next(index);
-            if (!g_frameBuffer.has_next($('#plane_select').val())) {
+            if (!g_frameBuffer.has_next($('#plane_select').val(),1)) {
                 $.ajax({
                     url: '{{ url_for('.getFrames', _external=True) }}',
                     type: 'POST',
