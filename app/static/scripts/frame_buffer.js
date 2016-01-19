@@ -86,8 +86,7 @@ function FrameBuffer(sequenceId,maxLength) {
                 return false
             }
 
-            var endKey = this.keys[this.keys.length-1]
-            if (this.current > (this.max()-this.min())/2.0) {
+            if ((this.current-this.min()) > (this.max()-this.min())/2.0) {
                 return false
             }
         }
@@ -143,14 +142,14 @@ function FrameBuffer(sequenceId,maxLength) {
         var maxval = this.max();
         var minval = this.min();
         while (len > this.maxLength) {
-            if (this.current > (maxval - minval)/3) {
-                delete this.buffer[minval]
-                minval = this.max();
-                len--
+            if ((this.current-minval) > (maxval - minval)/3) {
+                delete this.buffer[minval];
+                minval = this.min();
+                len--;
             } else {
-                delete this.buffer[maxval]
-                maxval = this.min();
-                len--
+                delete this.buffer[maxval];
+                maxval = this.max();
+                len--;
             }
         }
     }
