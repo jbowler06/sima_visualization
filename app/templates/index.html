@@ -89,6 +89,13 @@
                         </td>
                         <td>frames</td>
                     </tr>
+                    <tr>
+                        <td id="frame_average_button"
+                            class="button halfbutton handleButtonClick"
+                            colspan="3">
+                            4x Frame Average
+                        </td>
+                    </tr>
                 </table>
                 <div class="button smallButton floatRight" id="options_cancel">
                     <span>ok</span>
@@ -384,14 +391,10 @@
         uniform float startY;
 
         void main(void) {
-            if (false) {
+            if ((vTextureCoord.s > startX) && (vTextureCoord.t) > startY) {
                 gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
             } else {
-                if ((vTextureCoord.s > startX) && (vTextureCoord.t) > startY) {
-                    gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
-                } else {
-                    gl_FragColor = vec4(0, 0, 0, 0);
-                }
+                gl_FragColor = vec4(0, 0, 0, 0);
             }
         }
     </script>
@@ -436,26 +439,43 @@
         }
     </script>
 
-
-    <script id="shader-fs" type="x-shader/x-fragment">
+    <script id="shader-fs-frameaverage" type="x-shader/x-fragment">
         precision mediump float;
 
         varying vec2 vTextureCoord;
-        uniform sampler2D uSampler[4];
+        uniform sampler2D uSampler[16];
         uniform sampler2D uSampler1;
+        uniform int nframes;
         uniform int num_channels;
         uniform int uColorMode;
         uniform float roiOpacity;
         
         void main(void) {
-            const int nframes = 4;
+            const int _nframes = 4;
+            vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t));
+            for (int i = 1; i < _nframes; i++)
+            {
+                myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t)));
+            }
+            myTex /= float(_nframes);
+            gl_FragColor = vec4(myTex.rgb, 1.0);
+        }
+    </script>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTextureCoord;
+        uniform sampler2D uSampler[16];
+        uniform sampler2D uSampler1;
+        uniform int nframes;
+        uniform int num_channels;
+        uniform int uColorMode;
+        uniform float roiOpacity;
+        
+        void main(void) {
             if (num_channels == 1) {
                 vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t));
-                for (int i = 1; i < nframes; i++)
-                {
-                    myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t)));
-                }
-                myTex /= float(nframes);
                 //if ((myTex.r == 1.0)||(roiOpacity != 0.0)) {
                 if (roiOpacity != 0.0) {
                     if (uColorMode == 0) {
@@ -543,6 +563,8 @@
             gl.uniform1iv(shaderProgram.samplerUniform, [0,1,2,3])
 
             shaderProgram.channelsUniform = gl.getUniformLocation(shaderProgram, "num_channels")
+            shaderProgram.nframesUniform = gl.getUniformLocation(shaderProgram, "nframes");
+            gl.uniform1i(shaderProgram.nframesUniform, 1);
             shaderProgram.colorModeUniform = gl.getUniformLocation(shaderProgram, "uColorMode")
             gl.uniform1i(shaderProgram.colorModeUniform, 0)
             shaderProgram.roiOpacity = gl.getUniformLocation(shaderProgram, "roiOpacity")
@@ -787,7 +809,7 @@
             $('#buff_max').text(max);
             var nextFrame = g_frameBuffer.next();
 
-            var numFrames = 4;
+            var numFrames = g_frameViewer.frame_avg;
             if (nextFrame == -1) {
                 numFrames = 1;
             }
@@ -813,7 +835,7 @@
                     
                     //TODO: declare dims somewher else?
                     dims = ['x','y','z'];
-                    if (nextFrame == -1) {
+                    if (numFrames == -1) {
                         dims.map(function(dim) {
                             g_frameViewer.glContext.projections[dim+'Projection']
                                 .textureQueue.map(function(e,i,a) {
@@ -837,9 +859,7 @@
                     if (!fetching && !g_frameBuffer.isFull()) {
                         fetching = true
                         $('#buffering_warning').text('')
-                        for (var i=0; i < 4; i++) {
-                            fetchFrames();
-                        }
+                        fetchFrames();
                     }
                 }
             } else {
@@ -847,9 +867,7 @@
                 g_frameViewer.setPlaying(false);
                 if (!fetching) {
                     fetching = true
-                    for (var i=0; i < 4; i++) {
-                        fetchFrames();
-                    }
+                    fetchFrames();
                 }
             }
         }
@@ -1119,9 +1137,7 @@
             } else {
                 fetchFrame(0);
             }
-            for (var i = 0; i < 4; i++) {
-                fetchFrames();
-            }
+            fetchFrames();
         }
 
         function fileSelection(file) {
@@ -1433,13 +1449,16 @@
 
         function fetchFrame(index) {
             g_frameBuffer.set_next(index);
-            if (!g_frameBuffer.has_next($('#plane_select').val(),1)) {
+            if (!g_frameBuffer.has_next($('#plane_select').val(),g_frameViewer.frame_avg)) {
+                var indices = Array.apply(null,{length: g_frameViewer.frame_avg})
+                    .map(Number.call, Number)
+                    .map(function(e) {return (e+index);});
                 $.ajax({
                     url: '{{ url_for('.getFrames', _external=True) }}',
                     type: 'POST',
                     cache: false,
                     data: {
-                        frames: [index],
+                        frames: indices,
                         planes: [$('#plane_select').val()],
                         path: g_filePath,
                         normingVal: g_normingVal,
@@ -1708,6 +1727,18 @@
         }
 
         ButtonClickEvents = {
+            'frame_average_button': {
+                'deselect': function() {
+                    initShaders(g_frameViewer.glContext,'shader-fs');
+                    g_frameViewer.glContext.render();
+                },
+                'select': function() {
+                    initShaders(g_frameViewer.glContext,'shader-fs-frameaverage');
+                    g_frameViewer.glContext.render();
+                }
+            },
+
+            // ROI edit menu buttons
             'draw_roi_button': {
                 'deselect': function() {
                     g_frameViewer.allowDrag = true;

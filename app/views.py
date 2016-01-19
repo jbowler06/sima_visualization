@@ -401,7 +401,6 @@ def getFrames():
                         norming_val[ch] = factor
         else:
             vol = seq._get_frame(frame_number)
-            #vol = np.nanmean(seq[frame_number:frame_number+10,:,:,:,:],axis=0)
 
         if channel is not None:
             vol = vol[:,:,:,channel]
@@ -597,7 +596,7 @@ def getFolders(directory):
 def saveImage():
     image = request.form.get('image')
     filename = request.form.get('filename')
-    fh = open("/home/jack/movie/"+filename, "wb")
+    fh = open("/home/jack/movie2/"+filename, "wb")
     fh.write(image.decode('base64'))
     fh.close()
     return jsonify(status='complete')
