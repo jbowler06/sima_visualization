@@ -1,7 +1,10 @@
 # sima_visualization
 
+this project is still in early stages and undergoing testing. new issues and pull requests are welcome!
+
 Overview
 --------
+
 Visualization server built on the Flask microframework for inspecting time series data, motion correction results, and ROIs processed with the 
 SIMA packages <https://github.com/losonczylab/sima>.
 
