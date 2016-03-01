@@ -452,12 +452,11 @@
         
         void main(void) {
             const int _nframes = 4;
-            vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t));
+            vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
             for (int i = 1; i < _nframes; i++)
             {
-                myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t)));
+                myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes));
             }
-            myTex /= float(_nframes);
             gl_FragColor = vec4(myTex.rgb, 1.0);
         }
     </script>
@@ -833,9 +832,9 @@
 
                     if (!thisFrame) debugger;
                     
-                    //TODO: declare dims somewher else?
+                    //TODO: declare dims list somewher else?
                     dims = ['x','y','z'];
-                    if (numFrames == -1) {
+                    if (numFrames == 1) {
                         dims.map(function(dim) {
                             g_frameViewer.glContext.projections[dim+'Projection']
                                 .textureQueue.map(function(e,i,a) {
@@ -1730,11 +1729,13 @@
             'frame_average_button': {
                 'deselect': function() {
                     initShaders(g_frameViewer.glContext,'shader-fs');
+                    g_frameViewer.frame_avg = 1;
                     g_frameViewer.glContext.render();
                 },
                 'select': function() {
                     initShaders(g_frameViewer.glContext,'shader-fs-frameaverage');
-                    g_frameViewer.glContext.render();
+                    g_frameViewer.frame_avg = 4;
+                    playFramesFromQueue(true)
                 }
             },
 
