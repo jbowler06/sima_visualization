@@ -125,14 +125,14 @@ def getInfo():
                     norm_factors['channel_'+str(channel)] += [factor]
 
     json = {
-        'planes': range(seq.shape[1]+1),
-        'height': seq.shape[2],
-        'width': seq.shape[3],
+        'planes': range(int(seq.shape[1]+1)),
+        'height': int(seq.shape[2]),
+        'width': int(seq.shape[3]),
         'length': length
     }
 
     for channel in norm_factors.keys():
-        json[channel] = max(1,int(np.nanmean(norm_factors[channel])))
+        json[channel] = int(max(1,int(np.nanmean(norm_factors[channel]))))
 
     return jsonify(**json)
 
@@ -521,6 +521,7 @@ def updateRoi():
     except KeyError:
         rois = []
 
+    rois = filter(lambda r: r.id != roi_id, rois)
     rois.append(roi)
     dataset.add_ROIs(ROIList(rois), label=label)
 
@@ -596,7 +597,7 @@ def getFolders(directory):
 def saveImage():
     image = request.form.get('image')
     filename = request.form.get('filename')
-    fh = open("/home/jack/movie2/"+filename, "wb")
+    fh = open("/home/jack/movie/"+filename, "wb")
     fh.write(image.decode('base64'))
     fh.close()
     return jsonify(status='complete')
