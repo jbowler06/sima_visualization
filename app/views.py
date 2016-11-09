@@ -443,6 +443,9 @@ def setRoiLabel():
     ds_path = request.form.get('path')
     old_label = request.form.get('oldLabel')
     new_label = request.form.get('newLabel')
+    
+    if new_label == '':
+        new_label = 'rois'
 
     dataset = ImagingDataset.load(ds_path)
     if (old_label != ''):
@@ -512,6 +515,9 @@ def updateRoi():
         plane_data = np.concatenate((array_dat,z_dims),axis=2)
         roi_data.extend(list(plane_data))
 
+    for poly in roi_data:
+        if poly.shape[0] < 3:
+            raise Exception("unable to store polygon with less then 3 points")
     roi = ROI(polygons=roi_data,im_shape=dataset.frame_shape[:3])
 
     roi.label = roi_label
@@ -597,7 +603,7 @@ def getFolders(directory):
 def saveImage():
     image = request.form.get('image')
     filename = request.form.get('filename')
-    fh = open("/home/jack/movie/"+filename, "wb")
+    fh = open("/home/jack/gt2497_5/"+filename, "wb")
     fh.write(image.decode('base64'))
     fh.close()
     return jsonify(status='complete')

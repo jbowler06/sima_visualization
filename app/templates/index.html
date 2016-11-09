@@ -89,12 +89,30 @@
                         </td>
                         <td>frames</td>
                     </tr>
-                    <tr>
-                        <td id="frame_average_button"
-                            class="button halfbutton handleButtonClick"
-                            colspan="3">
-                            4x Frame Average
+                    <tr><td colspan=3>Frame Average: </td></tr>
+                    <tr><td colspan=3>
+                        <table><tr>
+                        <td id="2x_average_button"
+                            class="button halfbutton handleButtonClick frameAverageButton"
+                            colspan="2">
+                            2x
                         </td>
+                        <td id="4x_average_button"
+                            class="button halfbutton handleButtonClick frameAverageButton"
+                            colspan="2">
+                            4x
+                        </td>
+                        <td id="8x_average_button"
+                            class="button halfbutton handleButtonClick frameAverageButton"
+                            colspan="2">
+                            8x
+                        </td>
+                        <td id="frame_average_button"
+                            class="button halfbutton handleButtonClick frameAverageButton"
+                            colspan="2">
+                            16x
+                        </td>
+                        </tr></table></td>
                     </tr>
                 </table>
                 <div class="button smallButton floatRight" id="options_cancel">
@@ -439,7 +457,28 @@
         }
     </script>
 
-    <script id="shader-fs-frameaverage" type="x-shader/x-fragment">
+    <script id="shader-fs-fa2" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTextureCoord;
+        uniform sampler2D uSampler[16];
+        uniform sampler2D uSampler1;
+        uniform int nframes;
+        uniform int num_channels;
+        uniform int uColorMode;
+        uniform float roiOpacity;
+        
+        void main(void) {
+            const int _nframes = 2;
+            vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
+            for (int i = 1; i < _nframes; i++)
+            {
+                myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes));
+            }
+            gl_FragColor = vec4(myTex.rgb, 1.0);
+        }
+    </script>
+    <script id="shader-fs-fa4" type="x-shader/x-fragment">
         precision mediump float;
 
         varying vec2 vTextureCoord;
@@ -452,6 +491,50 @@
         
         void main(void) {
             const int _nframes = 4;
+            vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
+            for (int i = 1; i < _nframes; i++)
+            {
+                myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes));
+            }
+            gl_FragColor = vec4(myTex.rgb, 1.0);
+        }
+    </script>
+
+    <script id="shader-fs-fa8" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTextureCoord;
+        uniform sampler2D uSampler[16];
+        uniform sampler2D uSampler1;
+        uniform int nframes;
+        uniform int num_channels;
+        uniform int uColorMode;
+        uniform float roiOpacity;
+        
+        void main(void) {
+            const int _nframes = 8;
+            vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
+            for (int i = 1; i < _nframes; i++)
+            {
+                myTex += (texture2D(uSampler[i], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes));
+            }
+            gl_FragColor = vec4(myTex.rgb, 1.0);
+        }
+    </script>
+
+    <script id="shader-fs-frameaverage" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTextureCoord;
+        uniform sampler2D uSampler[16];
+        uniform sampler2D uSampler1;
+        uniform int nframes;
+        uniform int num_channels;
+        uniform int uColorMode;
+        uniform float roiOpacity;
+        
+        void main(void) {
+            const int _nframes = 16;
             vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
             for (int i = 1; i < _nframes; i++)
             {
@@ -504,7 +587,7 @@
                 vec4 channel1 = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t + 0.5));
                 vec4 channel2 = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t));
                 if (vTextureCoord.t < 0.5) {
-                    gl_FragColor = vec4(channel1.s,channel2.s,0.0,0.0);
+                    gl_FragColor = vec4(channel1.s,channel2.s*0.75,0.0,1.0);
                 } else {
                     gl_FragColor = vec4(0.0,0.0,0.0,0.0);
                 }
@@ -537,10 +620,27 @@
         var g_roiEditor;
 
         function initShaders(gl, fragShader) {
+            var shaderProgram = gl.createProgram();
+
+            if ((fragShader === 1)||(fragShader == 'shader-fs')) {
+                fragShader = 'shader-fs';
+                shaderProgram.frame_avg = 1;
+            } else if (fragShader === 2) {
+                fragShader = 'shader-fs-fa2';
+                shaderProgram.frame_avg = 2;
+            } else if (fragShader === 4){
+                fragShader = 'shader-fs-fa4';
+                shaderProgram.frame_avg = 4;
+            } else if (fragShader === 8) {
+                fragShader = 'shader-fs-fa8';
+                shaderProgram.frame_avg = 8;
+            } else {
+                fragShader = 'shader-fs-frameaverage';
+                shaderProgram.frame_avg = 16;
+            }
             var fragmentShader = getShader(gl, fragShader)
             var vertexShader = getShader(gl, "shader-vs")
 
-            var shaderProgram = gl.createProgram()
             gl.attachShader(shaderProgram, vertexShader)
             gl.attachShader(shaderProgram, fragmentShader)
             gl.linkProgram(shaderProgram)
@@ -559,7 +659,7 @@
             shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix")
             shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix")
             shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler[0]")
-            gl.uniform1iv(shaderProgram.samplerUniform, [0,1,2,3])
+            gl.uniform1iv(shaderProgram.samplerUniform, [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15])
 
             shaderProgram.channelsUniform = gl.getUniformLocation(shaderProgram, "num_channels")
             shaderProgram.nframesUniform = gl.getUniformLocation(shaderProgram, "nframes");
@@ -567,7 +667,7 @@
             shaderProgram.colorModeUniform = gl.getUniformLocation(shaderProgram, "uColorMode")
             gl.uniform1i(shaderProgram.colorModeUniform, 0)
             shaderProgram.roiOpacity = gl.getUniformLocation(shaderProgram, "roiOpacity")
-            gl.shaderProgram = shaderProgram
+            gl.shaderProgram = shaderProgram;
         }
 
 
@@ -696,7 +796,7 @@
             initShaders(gl, 'shader-fs')
             gl.projections = {}
 
-            var length = 4;
+            var length = 16;
             gl.projections.zProjection = {
                 vertexPositionBuffer: 
                     createSquareVertexPositionBuffer(gl,2.0,2.0),
@@ -832,28 +932,30 @@
 
                     if (!thisFrame) debugger;
                     
-                    //TODO: declare dims list somewher else?
-                    dims = ['x','y','z'];
-                    if (numFrames == 1) {
-                        dims.map(function(dim) {
-                            g_frameViewer.glContext.projections[dim+'Projection']
-                                .textureQueue.map(function(e,i,a) {
-                                    e.image.src = thisFrame[dim];
-                                });
-                        });
-                    } else {
-                        dims.map(function(dim) {
-                            g_frameViewer.glContext.projections[dim+'Projection']
-                                .textureQueue.map(function(e,i,a) {
-                                    e.image.src = g_frameBuffer.peekFrame(
+                    //if (numFrames == 1) {
+                    //    ['x','y','z'].map(function(dim) {
+                    //        g_frameViewer.glContext.projections[dim+'Projection']
+                    //            .textureQueue[0].image.src = thisFrame[dim];
+                    //    });
+                    //} else {
+                        ['x','y','z'].map(function(dim) {
+                            var i = 0;
+                            for (; i < numFrames; i++) {
+                                g_frameViewer.glContext.projections[dim+'Projection']
+                                    .textureQueue[i].image.src = g_frameBuffer.peekFrame(
                                         nextFrame+i,g_frameViewer.getCurrentPlane())[dim];
-                                });
+                            }
+                            //g_frameViewer.glContext.projections[dim+'Projection']
+                            //    .textureQueue.map(function(e,i,a) {
+                            //        e.image.src = g_frameBuffer.peekFrame(
+                            //            nextFrame+i,g_frameViewer.getCurrentPlane())[dim];
+                            //    });
                         });
-                    }
+
+                        g_frameViewer.glContext.update = (numFrames-1);
+                    //}
 
                     $('#this_frame_label').text(parseInt(nextFrame)+1)
-
-                    setTimeout(function(){playFramesFromQueue()}, g_frameViewer.frameDelay)
 
                     if (!fetching && !g_frameBuffer.isFull()) {
                         fetching = true
@@ -935,8 +1037,15 @@
             updateTextureData(context, context.projections.zProjection.textureQueue[i],true)
             updateTextureData(context, context.projections.xProjection.textureQueue[i],true)
             updateTextureData(context, context.projections.yProjection.textureQueue[i],true)
-            if (i == context.projections.zProjection.textureQueue.length-1) {
-                context.render();
+            
+            if (i === context.update) {
+                if (i === context.shaderProgram.frame_avg) {
+                    context.render();
+                } else {
+                    initShaders(context, i+1);
+                    context.render();
+                }
+                setTimeout(playFramesFromQueue, g_frameViewer.frameDelay)
                 if (false) {
                     //THIS IS FOR SAVING THE CANVAS AS PNG FILES
                     //
@@ -948,7 +1057,7 @@
                         cache: false,
                         data: {
                             image: p.replace(/^data:image\/(png|jpg);base64,/, ""),
-                            filename: 'frame_'+g_frameViewer.current+'.png'
+                            filename: 'frame_'+(g_frameViewer.current+1)+'.png'
                         }
                     }).done(function(response){
                     });
@@ -1726,6 +1835,57 @@
         }
 
         ButtonClickEvents = {
+            '2x_average_button': {
+                'deselect': function() {
+                    initShaders(g_frameViewer.glContext,'shader-fs');
+                    g_frameViewer.frame_avg = 1;
+                    g_frameViewer.glContext.render();
+                },
+                'select': function() {
+                    $('.frameAverageButton').removeClass('selected');
+                    $('#2x_average_button').addClass('selected');
+                    initShaders(g_frameViewer.glContext, 2);
+                    g_frameViewer.frame_avg = 2;
+                    g_frameBuffer.set_next(g_frameViewer.current);
+                    playFramesFromQueue(true);
+                    g_frameViewer.glContext.render();
+                }
+            },
+
+            '4x_average_button': {
+                'deselect': function() {
+                    initShaders(g_frameViewer.glContext,'shader-fs');
+                    g_frameViewer.frame_avg = 1;
+                    g_frameViewer.glContext.render();
+                },
+                'select': function() {
+                    $('.frameAverageButton').removeClass('selected');
+                    $('#4x_average_button').addClass('selected');
+                    initShaders(g_frameViewer.glContext, 4);
+                    g_frameViewer.frame_avg = 4;
+                    g_frameBuffer.set_next(g_frameViewer.current);
+                    playFramesFromQueue(true);
+                    g_frameViewer.glContext.render();
+                }
+            },
+
+            '8x_average_button': {
+                'deselect': function() {
+                    initShaders(g_frameViewer.glContext,'shader-fs');
+                    g_frameViewer.frame_avg = 1;
+                    g_frameViewer.glContext.render();
+                },
+                'select': function() {
+                    $('.frameAverageButton').removeClass('selected');
+                    $('#8x_average_button').addClass('selected');
+                    initShaders(g_frameViewer.glContext, 8);
+                    g_frameViewer.frame_avg = 8;
+                    g_frameBuffer.set_next(g_frameViewer.current);
+                    playFramesFromQueue(true);
+                    g_frameViewer.glContext.render();
+                }
+            },
+
             'frame_average_button': {
                 'deselect': function() {
                     initShaders(g_frameViewer.glContext,'shader-fs');
@@ -1733,9 +1893,13 @@
                     g_frameViewer.glContext.render();
                 },
                 'select': function() {
+                    $('.frameAverageButton').removeClass('selected');
+                    $('#frame_average_button').addClass('selected');
                     initShaders(g_frameViewer.glContext,'shader-fs-frameaverage');
-                    g_frameViewer.frame_avg = 4;
-                    playFramesFromQueue(true)
+                    g_frameViewer.frame_avg = 16;
+                    g_frameBuffer.set_next(g_frameViewer.current);
+                    playFramesFromQueue(true);
+                    g_frameViewer.glContext.render();
                 }
             },
 
