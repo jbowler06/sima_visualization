@@ -303,21 +303,21 @@
                         <div id="draw_roi_button"
                              class="button halfButton floatLeft slim 
                                     handleButtonClick">
-                             draw
+                             <u>d</u>raw
                         </div>
                     </td>
                     <td>
                         <div id="select_roi_button"
                              class="button halfButton floatLeft slim
                                     handleButtonClick">
-                             select
+                             se<u>l</u>ect
                         </div>
                     </td>
                     <td>
                         <div id="simplify_roi_button"
                              class="button halfButton floatLeft slim
                                     handleButtonClick roiEditButton disabled">
-                             simplify
+                             s<u>i</u>mplify
                         </div>
                     </td>
                     </tr>
@@ -326,21 +326,21 @@
                         <div id="save_roi_button"
                              class="button halfButton floatLeft slim
                                     handleButtonClick roiEditButton disabled">
-                             save
+                             <u>s</u>ave
                          </div>
                      </td>
                      <td>
                         <div id="delete_roi_button"
                              class="button halfButton floatLeft slim
                                     handleButtonClick roiEditButton disabled">
-                             delete
+                             delete <u>x</u>
                         </div>
                      </td>
                      <td>
                         <div id="move_roi_button"
                              class="button halfButton floatLeft slim
                                     handleButtonClick roiEditButton disabled">
-                             move
+                             <u>m</u>ove
                         </div>
                      </td>
                      </tr>
@@ -349,7 +349,7 @@
                         <div id="edit_roi_button"
                              class="button halfButton floatLeft slim
                                     handleButtonClick roiEditButton disabled">
-                             edit
+                             <u>e</u>dit
                         </div>
                      </td>
                      </tr>
@@ -1478,7 +1478,9 @@
                     if (type == "polygons") {
                         g_roiViewer.gl.rois = [];
                         var roiLabels = Object.keys(response);
-                        g_roiViewer.storePolygonRoi(response, roiLabels, 0);
+                        if (roiLabels.length != 0) {
+                            g_roiViewer.storePolygonRoi(response, roiLabels, 0);
+                        }
                     } else {
                         alert("mask type rois not currently implemented");
                         return;
@@ -1813,7 +1815,7 @@
             $('#drawing_label').val('');
             if ($('#draw_roi_button').hasClass('selected')) {
                 $('#draw_roi_button').removeClass('selected');
-                ButtonClickEvents.draw_roi_button.deselect;
+                ButtonClickEvents.draw_roi_button.deselect();
             }
             $('.roiEditButton').addClass('disabled');
             $('.roiEditButton.selected').map(function(){
@@ -1906,6 +1908,7 @@
             // ROI edit menu buttons
             'draw_roi_button': {
                 'deselect': function() {
+                    console.log('here!!!!!! - deselect');
                     g_frameViewer.allowDrag = true;
                     g_roiEditor.mouseClickHandler = undefined;
                     g_roiEditor.mouseDragHandler = undefined;
@@ -2023,6 +2026,11 @@
                     b.addClass('selected');
                 },
                 'select': function(b) {
+                    if (!g_roiEditor.rois.length) {
+                        b.removeClass('selected');
+                        return;
+                    }
+
                     $.ajax({
                         url: '{{ url_for('.deleteRoi', _external=True) }}',
                         type: 'POST',
@@ -2077,12 +2085,12 @@
         }
 
         function _handle_button_click(e) {
-            var button = $(e.target);
+            var button = $(e.target).closest('.handleButtonClick');
             if (button.hasClass('disabled')) {
                 return;
             }
 
-            if ($(e.target).hasClass('selected')) {
+            if (button.hasClass('selected')) {
                 button.removeClass('selected');
                 ButtonClickEvents[e.target.id].deselect(button)
             } else {
@@ -2113,12 +2121,14 @@
                         z: (g_frameViewer.getCurrentPlane()-1)
                     }})
                     .done(function(response) {
-                        button.removeClass('selected');
-                        ButtonClickEvents['select_roi_button'].deselect(button)
+                        if (typeof(response.error) === "undefined") {
+                            button.removeClass('selected');
+                            ButtonClickEvents['select_roi_button'].deselect(button)
 
-                        var roi = g_roiViewer.popRoi(response.id);
-                        if (typeof(roi) !== 'undefined'){
-                            _edit_roi(roi);
+                            var roi = g_roiViewer.popRoi(response.id);
+                            if (typeof(roi) !== 'undefined'){
+                                _edit_roi(roi);
+                            }
                         }
                     })
                     .always(function() {
@@ -2206,7 +2216,34 @@
             }
         }
 
+
+
         KeyboardHandlers = {
+            'roiControls': function(e) {
+                if (e.keyCode == 76) {
+                    _handle_button_click({'target':
+                        document.getElementById('select_roi_button')});
+                } else if (e.keyCode == 88) {
+                    _handle_button_click({'target':
+                        document.getElementById('delete_roi_button')});
+                } else if (e.keyCode == 83) {
+                    _handle_button_click({'target':
+                        document.getElementById('save_roi_button')});
+                } else if (e.keyCode == 68) {
+                    _handle_button_click({'target':
+                        document.getElementById('draw_roi_button')});
+                } else if (e.keyCode == 77) {
+                    _handle_button_click({'target':
+                        document.getElementById('move_roi_button')});
+                } else if (e.keyCode == 69) {
+                    _handle_button_click({'target':
+                        document.getElementById('edit_roi_button')});
+                } else if (e.keyCode == 73) {
+                    _handle_button_click({'target':
+                        document.getElementById('simplify_roi_button')});
+                }
+            },
+
             'roiDrawingMode': function(e) {
                 if (e.keyCode == 78) {
                     var color = tinycolor({h:1*360.0/10, s:65, v:50}).toRgb();
@@ -2219,9 +2256,6 @@
 
                 } else if (e.keyCode == 83) {
                     //TODO:implement multi segment roi drawing
-                } else if (e.keyCode == 68) {
-                    delete g_roiEditor.rois[0]
-                    g_roiEditor.render();
                 }
             },
 
@@ -2262,12 +2296,17 @@
         $(document).keydown(function(e) {
             if ($('input').is(':focus')) return;
 
+            console.log("keydown " + e.keyCode );
             if ($('#roi_mode_button').hasClass('selected')) {
                 alert('roi mode currently not implemented');
                 KeyboardHandlers.roiMaskMode(e);
                 return;
             } else if ($('#draw_roi_button').hasClass('selected')) {
                 KeyboardHandlers.roiDrawingMode(e);
+            }
+
+            if (!$('#roi_controls').hasClass('minified')){
+                KeyboardHandlers.roiControls(e);
             }
 
             KeyboardHandlers.frameViewer(e)
