@@ -494,7 +494,7 @@ def selectRoi():
                 if poly.contains(point):
                     return jsonify(label=roi.label,id=roi.id)
 
-    return None
+    return jsonify({'error': 'roi not found'})
 
 
 @app.route('/updateRoi',methods=['GET','POST'])
