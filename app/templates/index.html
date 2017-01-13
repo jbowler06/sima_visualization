@@ -183,11 +183,11 @@
     </div>
 
     <div id="roi_controls" class="minified"> 
-        <div class="arrowContainer">
+        <div class="arrowContainer handleButtonClick" id="roi_control_container">
             <span class="arrowOut">
                 <div align="center">&nbsp;&#60;</div>
                 <div style="height:75px;">&nbsp;</div>
-                <div align="center">R</div>
+                <div align="center"><u>R</u></div>
                 <div align="center">O</div>
                 <div align="center">I</div>
                 <div align="center">s</div>
@@ -229,21 +229,25 @@
                         <td 
                             class="tableButton"
                             colspan="2"
-                            id="delete_roi_label_button">delete label</td>
+                            id="delete_roi_label_button">delete roi list</td>
                     </tr>
-                    <tr>
+                    <!--tr>
                         <td 
                             class="tableButton roiLoadButton" 
                             id="polygon_roi_load_button" 
-                            colspan="2">load all polygons</td>
-                    </tr>
+                            colspan="2">reload polygons</td>
+                    </tr-->
                     <!-- tr>
                         <td class="tableButton roiLoadButton" 
                             id="projection_roi_load_button" 
                             colspan="2">load all projections</td>
                     </tr-->
                     <tr>
-                        <td class="tableButton clearRoiButton" colspan="2">clear rois</td>
+                        <!--td id="clear_rois_button"
+                            class="tableButton clearRoiButton handleButtonClick"
+                            colspan="2">
+                            clear rois
+                        </td-->
                     </tr>
                 </table>
             </div>
@@ -1110,6 +1114,7 @@
             }
 
             $('#label_select').prop('disabled', true);
+            $('#label_select option').remove();
             $.ajax({
                 url: '{{ url_for('.getLabels', _external=True) }}',
                 type: 'POST',
@@ -1117,15 +1122,20 @@
                     path: filepath
                 },
                 cache: false
-            }).done(function(html) {
-                var labelSelect = $('#label_select');
-                labelSelect.html('')
-                labelSelect.html(html)
-                var options = labelSelect.find('option');
-                if (options.length > 1) {
-                    labelSelect.val(options[1].value)
-                }
-                labelSelect.prop('disabled', false);
+            }).done(function(response) {
+                //var labelSelect = $('#label_select');
+                //labelSelect.html('')
+                //labelSelect.html(html)
+                //var options = labelSelect.find('option');
+                //if (options.length > 1) {
+                //    labelSelect.val(options[1].value)
+                //}
+                $('#label_select')[0].add(new Option('None', ''));
+                response.labels.map(function(e, a, i) {
+                    console.log(e);
+                    $('#label_select')[0].add(new Option(e, e));
+                });
+                $('#label_select').prop('disabled', false);
             });
         }
 
@@ -1374,6 +1384,7 @@
             $('#load_button').removeClass('selected')
         })
 
+        /*
         $('#roi_button').click(function() {
              $('#roi_button').addClass('selected');
              $('#roi_box').removeClass('hidden');
@@ -1383,6 +1394,7 @@
             $('#roi_button').removeClass('selected');
             $('#roi_box').addClass('hidden');
         });
+        */
 
 
         function setRoiMask(roiLabel) {
@@ -1434,37 +1446,44 @@
         }
 
 
+
         //TODO: reimplement mask style ROIs
-        $('.roiLoadButton').click(function() {
-            var loadButton = $(this);
-            if (loadButton.hasClass('selected')) {
+        function _load_rois() {
+            //var loadButton = $(this);
+            //if (loadButton.hasClass('selected')) {
+            //    return;
+            //}
+
+            g_roiViewer.clear();
+            g_roiEditor.clear();
+            const label = $('#label_select').val();
+            if (label === '') {
                 return;
             }
 
-            g_roiViewer.clear();
-            var label = $('#label_select').val();
-            
-            $('#roi_box').addClass('hidden');
-            $('#roi_button').removeClass('selected');
-            loadButton.addClass('selected');
-            loadButton.storeText = loadButton.text();
-            loadButton.text('loading...');
+            $('#label_select').prop('disabled',true);
 
-            if ($(this).attr('id') == 'polygon_roi_load_button') {
-                var type = 'polygons';
-            } else {
-                var type = 'projections';
-            }
+            //$('#roi_box').addClass('hidden');
+            //$('#roi_button').removeClass('selected');
+            //loadButton.addClass('selected');
+            //loadButton.storeText = loadButton.text();
+            //loadButton.text('loading...');
 
-            var url = '{{ url_for('.getRoiMasks', _external=True) }}';
-            var colorMode = 1;
-            if (label.match('^ica.*\.npz$|^opca.*\.npz')) {
-                var url = '{{ url_for('.getComponents', _external=True) }}';
-                colorMode = 0;
-            }
-            if (type == 'polygons') {
+            //if ($(this).attr('id') == 'polygon_roi_load_button') {
+            //    var type = 'polygons';
+            //} else {
+            //    var type = 'projections';
+            //}
+
+            //var url = '{{ url_for('.getRoiMasks', _external=True) }}';
+            //var colorMode = 1;
+            //if (label.match('^ica.*\.npz$|^opca.*\.npz')) {
+            //    var url = '{{ url_for('.getComponents', _external=True) }}';
+            //    colorMode = 0;
+            //}
+            //if (type == 'polygons') {
                 var url = '{{ url_for('.getRois', _external=True) }}';
-            }
+            //}
 
             $.ajax({
                 url: url,
@@ -1475,13 +1494,13 @@
                     label: label,
                 }})
                 .done(function(response) {
-                    if (type == "polygons") {
+                 //   if (type == "polygons") {
                         g_roiViewer.gl.rois = [];
                         var roiLabels = Object.keys(response);
                         if (roiLabels.length != 0) {
                             g_roiViewer.storePolygonRoi(response, roiLabels, 0);
                         }
-                    } else {
+                   /* } else {
                         alert("mask type rois not currently implemented");
                         return;
                         roiContext = createProjectionContext('#roi_canvas');
@@ -1493,12 +1512,20 @@
                         roiContext.rois = response;
                         setRoiMask(Object.keys(response)[0]);
                         $('#roi_mode_button').removeClass('hidden');
-                    }
+                    }*/
                 })
                 .always(function() {
-                    loadButton.text(loadButton.storeText);
-                    loadButton.removeClass('selected');
+                    //loadButton.text(loadButton.storeText);
+                    //loadButton.removeClass('selected');
+                    $('#label_select').prop('disabled', false);
                 });
+        }
+
+        $('.roiLoadButton').click(_load_rois);
+
+
+        $('#label_select').change(function() {
+            _load_rois();
         });
 
 
@@ -1603,10 +1630,12 @@
            }
         }
 
+        /*
         $('.clearRoiButton').click(function() {
             _save_editor_roi();
             g_roiViewer.clear();
         });
+        */
 
         $('#volume_button').click(function() {
             if($('#volume_button').hasClass('selected')) {
@@ -1689,6 +1718,7 @@
             }
         });
 
+        /*
         $('#roi_controls .arrowContainer').click(function() {
             var control = $('#roi_controls')
             if (control.hasClass('minified')) {
@@ -1699,6 +1729,7 @@
                 $('#drawing_controls').addClass('hidden');
             }
         });
+        */
 
         $('#roi_label_span').click(function() {
             var setOptions = $('#roi_set_options');
@@ -1837,6 +1868,28 @@
         }
 
         ButtonClickEvents = {
+            'roi_control_container': {
+                'deselect': function(b) {
+                    $('#roi_controls').addClass('minified');
+                    $('#drawing_controls').addClass('hidden');
+                },
+                'select': function(b) {
+                    $('#roi_controls').removeClass('minified');
+                    $('#drawing_controls').removeClass('hidden');
+                }
+            },
+
+            'clear_rois_button': {
+                'deselect': function(b) {
+                    return;
+                },
+                'select': function(b) {
+                    _save_editor_roi();
+                    g_roiViewer.clear();
+                    b.removeClass('selected');
+                }
+            },
+
             '2x_average_button': {
                 'deselect': function() {
                     initShaders(g_frameViewer.glContext,'shader-fs');
@@ -1908,7 +1961,6 @@
             // ROI edit menu buttons
             'draw_roi_button': {
                 'deselect': function() {
-                    console.log('here!!!!!! - deselect');
                     g_frameViewer.allowDrag = true;
                     g_roiEditor.mouseClickHandler = undefined;
                     g_roiEditor.mouseDragHandler = undefined;
@@ -2092,10 +2144,10 @@
 
             if (button.hasClass('selected')) {
                 button.removeClass('selected');
-                ButtonClickEvents[e.target.id].deselect(button)
+                ButtonClickEvents[button[0].id].deselect(button)
             } else {
                 button.addClass('selected');
-                ButtonClickEvents[e.target.id].select(button);
+                ButtonClickEvents[button[0].id].select(button);
             }
         }
 
@@ -2281,6 +2333,9 @@
                     $('#single_reverse_button').trigger('click');
                 } else if (e.keyCode == 39) {
                     $('#single_step_button').trigger('click');
+                } else  if (e.keyCode == 82) {
+                    _handle_button_click({'target':
+                        document.getElementById('roi_control_container')});
                 }
 
                 if ((e.charCode == 32)||(e.keyCode == 32)) {
@@ -2295,6 +2350,8 @@
 
         $(document).keydown(function(e) {
             if ($('input').is(':focus')) return;
+
+            if (e.metaKey) return;
 
             console.log("keydown " + e.keyCode );
             if ($('#roi_mode_button').hasClass('selected')) {
