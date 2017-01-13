@@ -1,6 +1,6 @@
 function ROIViewer(canvas, frameViewer, slider) {
     var self = this;
-    this.defaultTransparency = 25
+    this.defaultTransparency = 50;
 
     this.canvas = canvas;
     this.frameViewer = frameViewer;
