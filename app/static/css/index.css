@@ -206,6 +206,14 @@ input.norming_value_input{
     top: 100px;
 }
 
+#roi_control_container.selected {
+    background-color: #000;
+}
+
+#roi_control_container:hover {
+    background-color: #555;
+}
+
 .roiTab {
     border: thin solid #0F0;
     height: 50px;
@@ -328,6 +336,14 @@ input.norming_value_input{
     z-index: 10;
     background-color: #000;
 
+}
+
+#drawing_controls .disabled u {
+    color: #600;
+}
+
+#drawing_controls u {
+    color: #692;
 }
 
 .editablePoint {
