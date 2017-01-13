@@ -356,6 +356,13 @@
                              <u>e</u>dit
                         </div>
                      </td>
+                     <td>
+                        <div id="delete_point_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick roiEditButton disabled">
+                             del p<u>t</u>
+                        </div>
+                     </td>
                      </tr>
                  </table>
             </tr>
@@ -1132,7 +1139,6 @@
                 //}
                 $('#label_select')[0].add(new Option('None', ''));
                 response.labels.map(function(e, a, i) {
-                    console.log(e);
                     $('#label_select')[0].add(new Option(e, e));
                 });
                 $('#label_select').prop('disabled', false);
@@ -1743,23 +1749,34 @@
         function addRoiLabel(newLabel) {
             var labelSelect = $('#label_select');
             labelSelect.prop('disabled', true);
+            $('#label_select option').remove();
             $.ajax({
                 url: '{{ url_for('.setRoiLabel', _external=True) }}',
                 type: 'POST',
-                cache: false,
                 data: {
                     path: g_filePath,
                     oldLabel: labelSelect.val(),
                     newLabel: newLabel
-                }
-            }).done(function(html) {
-                labelSelect
-                    .html('')
-                    .html(html);
-                labelSelect.find('option[value="' + newLabel + '"]').prop('selected',true);
-            }).always(function() {
-                labelSelect.prop('disabled', false);
+                },
+                cache: false
+            }).done(function(response) {
+                //var labelSelect = $('#label_select');
+                //labelSelect.html('')
+                //labelSelect.html(html)
+                //var options = labelSelect.find('option');
+                //if (options.length > 1) {
+                //    labelSelect.val(options[1].value)
+                //}
+                $('#label_select')[0].add(new Option('None', ''));
+                response.labels.map(function(e, a, i) {
+                    console.log(e);
+                    $('#label_select')[0].add(new Option(e, e));
+                    $('#label_select').val(newLabel).change();
+                });
+                $('#label_select').prop('disabled', false);
             });
+
+
         }
 
 
@@ -1775,9 +1792,15 @@
             if (deleteButton.hasClass('selected')) {
                 return;
             }
-            deleteButton.addClass('selected')
-            var selected_value = $('#label_select').val()
+
+            deleteButton.addClass('selected');
+            var selected_value = $('#label_select').val();
+            if (selected_value === '') {
+                return;
+            }
+
             $('#label_select option[value="' + selected_value + '"]').remove();
+            $('#label_select').val('').change();
             
             $.ajax({
                 url: '{{ url_for('.deleteRoiSet', _external=True) }}',
@@ -2073,6 +2096,51 @@
                 }
             },
 
+            'delete_point_button': {
+                'deselect': function() {
+                    $('.editablePoint.active').remove();
+                    g_frameViewer.allowDrag = true;
+                },
+                'select': function() {
+                    g_frameViewer.allowDrag = false;
+                    
+                    var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
+                    g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
+
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startX,
+                            point[0]/g_frameViewer.width);
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startY, 
+                            1-point[1]/g_frameViewer.height);
+                        drawColorMap(positioningContext, 0);
+
+                        var canvas = $('#positioning_canvas');
+                        var height = canvas.height();
+                        var width = canvas.width();
+                        var pixelValues = new Uint8Array(height*width*4);
+                        positioningContext.readPixels(0, 0, width, height,
+                            positioningContext.RGBA, positioningContext.UNSIGNED_BYTE,
+                            pixelValues);
+
+                        var i = 0;
+                        for (; i < pixelValues.length; i+=4) {
+                            if (pixelValues[i] != 0) break;
+                        }
+
+                        _add_marker((i/4)%width, height-Math.floor(i/4/width), ('vert_' + idx))
+
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startX, 0);
+                        positioningContext.uniform1f(
+                            positioningContext.shaderProgram.startY, 0);
+                        drawColorMap(positioningContext, 0);
+                    });
+
+                    $('.editablePoint.active').addClass('deleteable');
+                }
+            },
+
             'delete_roi_button': {
                 'deselect': function(b) {
                     b.addClass('selected');
@@ -2245,8 +2313,9 @@
                     var offsetX = selected.offsetLeft;
 
                     var pixelValues = new Uint8Array(4);
-                    positioningContext.readPixels(offsetX, offsetY, 1, 1, positioningContext.RGBA,
-                        positioningContext.UNSIGNED_BYTE, pixelValues);
+                    positioningContext.readPixels(offsetX, offsetY, 1, 1,
+                        positioningContext.RGBA, positioningContext.UNSIGNED_BYTE,
+                        pixelValues);
 
                     var transXval = pixelValues[0]*g_frameViewer.width/255;
                     var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
@@ -2263,11 +2332,9 @@
                     }
                     g_roiEditor.rois[0].setPoints(g_roiEditor.gl, newPoints);
                     g_roiEditor.render();
-
                 }
             }
         }
-
 
 
         KeyboardHandlers = {
@@ -2293,6 +2360,9 @@
                 } else if (e.keyCode == 73) {
                     _handle_button_click({'target':
                         document.getElementById('simplify_roi_button')});
+                } else if (e.keyCode == 84) {
+                    _handle_button_click({'target':
+                        document.getElementById('delete_point_button')});
                 }
             },
 
@@ -2353,7 +2423,7 @@
 
             if (e.metaKey) return;
 
-            console.log("keydown " + e.keyCode );
+            // console.log("keydown " + e.keyCode );
             if ($('#roi_mode_button').hasClass('selected')) {
                 alert('roi mode currently not implemented');
                 KeyboardHandlers.roiMaskMode(e);
@@ -2431,7 +2501,8 @@
             var relY = $(this).height() - (e.pageY - parentOffset.top);
             
             var pixelValues = new Uint8Array(4);
-            positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA, positioningContext.UNSIGNED_BYTE, pixelValues);
+            positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
+                positioningContext.UNSIGNED_BYTE, pixelValues);
             console.log(pixelValues[0] + ' ' + pixelValues[1] + ' ' + pixelValues[2]);
         });
 
@@ -2440,13 +2511,62 @@
             x_elem = 0, y_elem = 0;
 
         function _drag_init(elem) {
+            if ($(elem).hasClass('deleteable')) {
+                _delete_point(elem);
+            } else {
+                selected = elem;
+                x_elem = x_pos - selected.offsetLeft;
+                y_elem = y_pos - selected.offsetTop;
+            }
+        }
+
+        function _delete_point(elem) {
             selected = elem;
             x_elem = x_pos - selected.offsetLeft;
             y_elem = y_pos - selected.offsetTop;
+
+            selected.style.left = (x_pos - x_elem) + 'px';
+            selected.style.top = (y_pos - y_elem) + 'px';
+
+            var parentOffset = $('.canvascontainer').offset();
+            var offsetY = $('#roi_editing_canvas').height() - selected.offsetTop;
+            var offsetX = selected.offsetLeft;
+
+            var pixelValues = new Uint8Array(4);
+            positioningContext.readPixels(offsetX, offsetY, 1, 1, positioningContext.RGBA,
+            positioningContext.UNSIGNED_BYTE, pixelValues);
+
+            var transXval = pixelValues[0]*g_frameViewer.width/255;
+            var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
+
+            var newPoints = g_roiEditor.rois[0].points;
+                    
+            var plane = g_frameViewer.getCurrentPlane()-1;
+            const vert_num = selected.id.substr(5);
+            if (plane < 0) {
+                newPoints.map(function(_, idx, arr) {
+                    arr[idx][0].splice(selected.id.substr(5), 1);
+                });
+            } else {
+                newPoints[plane][0].splice(selected.id.substr(5), 1);
+            }
+            g_roiEditor.rois[0].setPoints(g_roiEditor.gl, newPoints);
+            selected.remove();
+            selected = null;
+
+            $.map($('.editablePoint.active'), function(elem){
+                var elem_id = parseInt(elem.id.substr(5));
+                if (elem_id > vert_num) {
+                    elem_id--;
+                    elem.id = 'vert_' + elem_id;
+                    console.log("elem " + elem_id);
+                }
+            });
+            g_roiEditor.render();
         }
 
         $('.editablePoint').bind('mousedown', function() {_drag_init(this)});
-        
+
         $('.editablePoint').bind('mouseup', function () {
             selected = null;
         });

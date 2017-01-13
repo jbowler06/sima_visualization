@@ -197,7 +197,6 @@ def getLabels():
     return jsonify({ 'labels': labels })
 
 
-
 @app.route('/getRoiList', methods=['GET','POST'])
 def getRoiList():
     ds_path = request.form.get('path')
@@ -327,7 +326,10 @@ def getRois():
     
     dataset = ImagingDataset.load(ds_path)
     convertedRois = {}
-    rois = ROIList.load(os.path.join(dataset.savedir,'rois.pkl'),label=label)
+    try:
+        rois = ROIList.load(os.path.join(dataset.savedir,'rois.pkl'),label=label)
+    except:
+        return jsonify({})
 
     for i,roi in enumerate(rois):
         if roi.id is None:
@@ -342,6 +344,8 @@ def getRois():
                 roi_points.append([])
         for poly in roi.polygons:
             coords = np.array(poly.exterior.coords)
+            if np.all(coords[-1] == coords[0]):
+                coords = coords[:-1]
             plane = int(coords[0,-1])
             coords = coords[:,:2].astype(int).tolist()
             roi_points[plane].append(coords)
@@ -465,7 +469,8 @@ def setRoiLabel():
     labels.extend(
         map(os.path.basename,glob.glob(os.path.join(ds_path,'opca*.npz'))))
 
-    return render_template('select_list.html',options=['']+labels)
+    #return render_template('select_list.html',options=['']+labels)
+    return jsonify({ 'labels': labels })
 
 
 @app.route('/deleteRoiSet', methods=['GET','POST'])
