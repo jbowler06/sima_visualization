@@ -356,13 +356,21 @@ input.norming_value_input{
     overflow: visible;
 }
 
+.editablePoint.deleteable {
+    cursor: cell;
+}
+
 .editableImageContainer {
     width: 10px;
     height: 10px;
-    background-image: url(../images/red-circle.png);
+    background-image: url(../images/blue-circle.png);
     background-size: 10px 10px;
     background-repeat: no-repeat;
     position: relative;
     left: -5px;
     top: -5px;
+}
+
+.deleteable .editableImageContainer {
+    background-image: url(../images/red-circle.png);
 }
