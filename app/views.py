@@ -179,20 +179,23 @@ def getLabels():
     try:
         dataset = ImagingDataset.load(ds_path)
     except:
-        return ''
+        return jsonify({ 'labels': [] })
 
     try:
         with open(os.path.join(dataset.savedir,'rois.pkl'), 'rb') as f:
             labels = pickle.load(f).keys()
     except:
-        return ''
+        #return ''
+        return jsonify({ 'labels': [] })
 
     labels.extend(
         map(os.path.basename,glob.glob(os.path.join(ds_path,'ica*.npz'))))
     labels.extend(
         map(os.path.basename,glob.glob(os.path.join(ds_path,'opca*.npz'))))
 
-    return render_template('select_list.html',options=['']+labels)
+    #return render_template('select_list.html',options=['']+labels)
+    return jsonify({ 'labels': labels })
+
 
 
 @app.route('/getRoiList', methods=['GET','POST'])
@@ -441,7 +444,8 @@ def getFrames():
 @app.route('/setRoiLabel', methods=['GET','POST'])
 def setRoiLabel():
     ds_path = request.form.get('path')
-    old_label = request.form.get('oldLabel')
+    #old_label = request.form.get('oldLabel')
+    old_label = ''
     new_label = request.form.get('newLabel')
     
     if new_label == '':
