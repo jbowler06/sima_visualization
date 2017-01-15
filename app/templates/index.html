@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <link rel="stylesheet" type="text/css" 
+    <link rel="stylesheet" type="text/css"
             href="{{ url_for('static', filename='css/index.css') }}">
     <title>my awesome website</title>
 </head>
@@ -12,9 +12,9 @@
         <div class="loadBox" id="load_box">
             <p>file selection:</p>
             <p style="width:auto;margin:0px 5px">
-                <input 
-                    type="text" 
-                    id="file_input" 
+                <input
+                    type="text"
+                    id="file_input"
                     class="textInput floatLeft">
                 <div class="button smallButton floatLeft" id="file_get">
                     <span>go</span>
@@ -32,26 +32,26 @@
             </p>
             <div id="cycle_select_container" class="hidden">
                 <p><span class="floatLeft">Imaging Cycle:</span>
-                    <select 
-                        class="floatLeft" 
-                        id="cycle_select" 
+                    <select
+                        class="floatLeft"
+                        id="cycle_select"
                         style="width:100px; min-width:100px; margin: 0px 15px;">
                     </select>
                 </p>
             </div>
             <div>
                 <p><span class="floatLeft">Contrast Cutoff:</span>
-                    <input type="text" 
-                           class="norming_value_input floatLeft" 
+                    <input type="text"
+                           class="norming_value_input floatLeft"
                            id="ch1_norm_input">
-                    <input type="text" 
-                           class="norming_value_input floatLeft hidden" 
+                    <input type="text"
+                           class="norming_value_input floatLeft hidden"
                            id="ch2_norm_input">
                 </p>
             </div>
             <p style="width:auto;margin:0px 5px">
                 <select class="floatLeft" id="channel_select"></select>
-                <div class="button smallButton floatLeft hidden" 
+                <div class="button smallButton floatLeft hidden"
                      id="load_dataset_button">
                     <span>ok</span>
                 </div>
@@ -65,8 +65,8 @@
                     <tr>
                         <td>frame rate:</td>
                         <td>
-                            <input type="text" 
-                                   id="frame_rate_input" 
+                            <input type="text"
+                                   id="frame_rate_input"
                                    class="textInput floatLeft">
                         </td>
                         <td>Hz</td>
@@ -74,8 +74,8 @@
                     <tr>
                         <td>packet size:</td>
                         <td>
-                            <input type="text" 
-                                   id="packet_size_input" 
+                            <input type="text"
+                                   id="packet_size_input"
                                    class="textInput floatLeft">
                         </td>
                         <td>frames</td>
@@ -83,8 +83,8 @@
                     <tr>
                         <td>buffer size:</td>
                         <td>
-                            <input type="text" 
-                                   id="buffer_size_input" 
+                            <input type="text"
+                                   id="buffer_size_input"
                                    class="textInput floatLeft">
                         </td>
                         <td>frames</td>
@@ -147,34 +147,34 @@
         <div class="smallLabel" id="step_size_label">
             <span>step size: <span id="step_size_span">1</span></span>
         </div>
-       
+
         <div>
-            <input type="range" name="frame_slider" id="frame_slider" 
+            <input type="range" name="frame_slider" id="frame_slider"
                     min="0" max="100" value="0">
         </div>
-        
+
         <div>
-            <div class="button halfButton floatLeft stepButton" 
+            <div class="button halfButton floatLeft stepButton"
                  id="single_reverse_button">
                 <span>&#60;</span>
             </div>
-            <div class="button halfButton floatLeft stepButton" 
+            <div class="button halfButton floatLeft stepButton"
                  id="single_step_button">
                 <span>&#62;</span>
             </div>
         </div>
         <div>
-            <div class="button halfButton floatLeft slim" 
+            <div class="button halfButton floatLeft slim"
                  id="reduce_step_button">
                 <span>&#60;&#60;</span>
             </div>
-            <div class="button halfButton floatLeft slim" 
+            <div class="button halfButton floatLeft slim"
                  id="increase_step_button">
                 <span>&#62;&#62;</span>
             </div>
         </div>
         <div class="warningBox" id="buffering_warning"><span></span></div>
-        <div> 
+        <div>
             <p>min:<span id="buff_min"></span>
             <p>max:<span id="buff_max"></span>
             <p>curr:<span id="buff_curr"></span>
@@ -182,7 +182,7 @@
         <div class="indicator floatLeft" id="indicator"><span>&nbsp;</span></div>
     </div>
 
-    <div id="roi_controls" class="minified"> 
+    <div id="roi_controls" class="minified">
         <div class="arrowContainer handleButtonClick" id="roi_control_container">
             <span class="arrowOut">
                 <div align="center">&nbsp;&#60;</div>
@@ -194,7 +194,7 @@
             </span>
             <span class="arrowIn">&nbsp;&#62;</span>
         </div>
-        <div class="controlContainer floatLeft"> 
+        <div class="controlContainer floatLeft">
         <div id="roi_control_heading">
             <div class="floatLeft" style="width:147px">
                 <select id="label_select" class="floatLeft"></select>
@@ -211,11 +211,11 @@
                     </tr>
                     <tr>
                         <td colspan="3">
-                            <input type="range" 
-                                   name="roi_slider" 
-                                   id="roi_slider" 
-                                   min="0" 
-                                   max="100" 
+                            <input type="range"
+                                   name="roi_slider"
+                                   id="roi_slider"
+                                   min="0"
+                                   max="100"
                                    value="0"
                                    style="width:220px">
                         </td>
@@ -226,20 +226,20 @@
                         <td class="tableButton" id="set_roi_label_button">set</td>
                     </tr>
                     <tr>
-                        <td 
+                        <td
                             class="tableButton"
                             colspan="2"
                             id="delete_roi_label_button">delete roi list</td>
                     </tr>
                     <!--tr>
-                        <td 
-                            class="tableButton roiLoadButton" 
-                            id="polygon_roi_load_button" 
+                        <td
+                            class="tableButton roiLoadButton"
+                            id="polygon_roi_load_button"
                             colspan="2">reload polygons</td>
                     </tr-->
                     <!-- tr>
-                        <td class="tableButton roiLoadButton" 
-                            id="projection_roi_load_button" 
+                        <td class="tableButton roiLoadButton"
+                            id="projection_roi_load_button"
                             colspan="2">load all projections</td>
                     </tr-->
                     <tr>
@@ -253,8 +253,8 @@
             </div>
         </div>
         <div style="height:300px;width:300px" class="floatLeft">
-            <div 
-                id="roi_tab_container" 
+            <div
+                id="roi_tab_container"
                 style="width:100%; height:100%; overflow:auto; margin:1px;">
 
                 <div id="roi_tab_template" class="roiTab hidden">
@@ -263,9 +263,9 @@
                         .&nbsp;&nbsp;
                         <span class="roiIdSpan">roi_id</span>
                     </div>
-                    <div 
+                    <div
                         class="roiPolygonsButton button smallButton floatLeft">l</div>
-                    <div 
+                    <div
                         class="roiProjectionsButton button smallButton floatLeft"
                         style="visibility: hidden">r</div>
                 </div>
@@ -292,11 +292,11 @@
                 <td>transparency</td>
             </tr>
             <tr>
-                <td colspan="3"><input type="range" 
-                       name="roi_edit_slider" 
-                       id="roi_edit_slider" 
-                       min="0" 
-                       max="100" 
+                <td colspan="3"><input type="range"
+                       name="roi_edit_slider"
+                       id="roi_edit_slider"
+                       min="0"
+                       max="100"
                        value="0"
                        style="width:170px"></td>
             </tr>
@@ -305,7 +305,7 @@
                     <tr>
                     <td>
                         <div id="draw_roi_button"
-                             class="button halfButton floatLeft slim 
+                             class="button halfButton floatLeft slim
                                     handleButtonClick">
                              <u>d</u>raw
                         </div>
@@ -363,6 +363,13 @@
                              del p<u>t</u>
                         </div>
                      </td>
+                     <td>
+                        <div id="revert_roi_button"
+                             class="button halfButton floatLeft slim
+                                    handleButtonClick roiEditButton disabled">
+                             re<u>v</u>ert
+                        </div>
+                     </td>
                      </tr>
                  </table>
             </tr>
@@ -378,38 +385,38 @@
             <canvas class="webGlCanvas" id="roi_canvas" width="800" height="700"></canvas>
             <canvas class="webGlCanvas" id="roi_editing_canvas" width="800" height="700"></canvas>
             <canvas class="webGlCanvas" id="positioning_canvas" width="800" height="700"></canvas>
-            <div class="button smallButton" 
-                 id="volume_button" 
+            <div class="button smallButton"
+                 id="volume_button"
                  style="position:absolute; top:0px; right:0px;">V</div>
-            <div class="button smallButton" 
-                 id="scroll_in_button" 
+            <div class="button smallButton"
+                 id="scroll_in_button"
                  style="position:absolute; top:29px; right:0px;">&#43;</div>
-            <div class="button smallButton" 
-                 id="scroll_out_button" 
+            <div class="button smallButton"
+                 id="scroll_out_button"
                  style="position:absolute; top:58px; right:0px;">&#45;</div>
-            <div class="button smallButton hidden" 
-                 id="roi_mode_button" 
+            <div class="button smallButton hidden"
+                 id="roi_mode_button"
                  style="position:absolute; margin-top:670px; right:0px;">R</div>
         </div>
     </div>
 
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/jquery-1.11.2.min.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/glMatrix-0.9.5.min.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/frame_buffer.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/webgl_helpers.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/frame_viewer.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/tinycolor.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/roi.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/roi_viewer.js') }}"></script>
-    <script type="text/javascript" 
+    <script type="text/javascript"
         src="{{ url_for('static', filename='scripts/earcut.min.js') }}"></script>
 
 
@@ -478,7 +485,7 @@
         uniform int num_channels;
         uniform int uColorMode;
         uniform float roiOpacity;
-        
+
         void main(void) {
             const int _nframes = 2;
             vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
@@ -499,7 +506,7 @@
         uniform int num_channels;
         uniform int uColorMode;
         uniform float roiOpacity;
-        
+
         void main(void) {
             const int _nframes = 4;
             vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
@@ -521,7 +528,7 @@
         uniform int num_channels;
         uniform int uColorMode;
         uniform float roiOpacity;
-        
+
         void main(void) {
             const int _nframes = 8;
             vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
@@ -543,7 +550,7 @@
         uniform int num_channels;
         uniform int uColorMode;
         uniform float roiOpacity;
-        
+
         void main(void) {
             const int _nframes = 16;
             vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t))/float(_nframes);
@@ -565,7 +572,7 @@
         uniform int num_channels;
         uniform int uColorMode;
         uniform float roiOpacity;
-        
+
         void main(void) {
             if (num_channels == 1) {
                 vec4 myTex = texture2D(uSampler[0], vec2(vTextureCoord.s, vTextureCoord.t));
@@ -580,7 +587,7 @@
                                         myTex.g-myTex.g*roiOpacity,
                                         myTex.b-myTex.b*roiOpacity,
                                         opacity*(1.0-roiOpacity));
-                } else if (myTex.r == 0.0 ) { 
+                } else if (myTex.r == 0.0 ) {
                     if (uColorMode == 0) {
                         myTex.b = 0.0;
                         myTex.r = 0.0;
@@ -691,7 +698,7 @@
             gl.uniformMatrix4fv(gl.shaderProgram.pMatrixUniform, false, pMatrix)
             gl.uniformMatrix4fv(gl.shaderProgram.mvMatrixUniform, false, mvMatrix)
         }
-   
+
 
         function drawScene(gl) {
             gl.viewport(0,0, gl.viewportWidth, gl.viewportHeight)
@@ -700,7 +707,7 @@
             var zProjection = gl.projections.zProjection;
             var xProjection = gl.projections.xProjection;
             var yProjection = gl.projections.yProjection;
-         
+
             var num_channels = 1
             if ($('#channel_select').val() == 'overlay') {
                 num_channels = 2
@@ -722,28 +729,28 @@
             mat4.identity(mvMatrix)
             mat4.translate(mvMatrix, [-0.25+offset.x, 0.25+offset.y, g_frameViewer.zoomLevel])
             setMatrixUniforms(gl)
-            
+
             gl.bindBuffer(gl.ARRAY_BUFFER, zProjection.vertexPositionBuffer)
-            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute, 
+            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute,
                     zProjection.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0)
             gl.bindBuffer(gl.ARRAY_BUFFER, zProjection.textureCoordBuffer)
-            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
+            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute,
                     zProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
 
             zProjection.textureQueue.map(function(e,i,a) {
                 gl.activeTexture(gl.TEXTURE0 + i);
                 gl.bindTexture(gl.TEXTURE_2D, e);
             });
-            
+
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, zProjection.vertexPositionBuffer.numItems)
 
             mat4.translate(mvMatrix, [translate_x, 0.0, 0.0])
             setMatrixUniforms(gl)
             gl.bindBuffer(gl.ARRAY_BUFFER, xProjection.vertexPositionBuffer)
-            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute, 
+            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute,
                     xProjection.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0)
             gl.bindBuffer(gl.ARRAY_BUFFER, xProjection.textureCoordBuffer)
-            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
+            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute,
                     xProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
 
             xProjection.textureQueue.map(function(e,i,a) {
@@ -758,17 +765,17 @@
             setMatrixUniforms(gl)
 
             gl.bindBuffer(gl.ARRAY_BUFFER, yProjection.vertexPositionBuffer)
-            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute, 
+            gl.vertexAttribPointer(gl.shaderProgram.vertexPositionAttribute,
                     yProjection.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0)
             gl.bindBuffer(gl.ARRAY_BUFFER, yProjection.textureCoordBuffer)
-            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute, 
+            gl.vertexAttribPointer(gl.shaderProgram.textureCoordAttribute,
                     yProjection.textureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0)
 
             yProjection.textureQueue.map(function(e,i,a) {
                 gl.activeTexture(gl.TEXTURE0 + i);
                 gl.bindTexture(gl.TEXTURE_2D, e);
             });
-            
+
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, yProjection.vertexPositionBuffer.numItems)
         }
 
@@ -809,7 +816,7 @@
 
             var length = 16;
             gl.projections.zProjection = {
-                vertexPositionBuffer: 
+                vertexPositionBuffer:
                     createSquareVertexPositionBuffer(gl,2.0,2.0),
                 textureCoordBuffer: createTextureCoordBuffer(gl),
             }
@@ -821,21 +828,21 @@
                         return tex});
 
             gl.projections.xProjection = {
-                vertexPositionBuffer: 
+                vertexPositionBuffer:
                     createSquareVertexPositionBuffer(gl,0.5,2.0),
                 textureCoordBuffer: createTextureCoordBuffer(gl),
-            }           
+            }
             gl.projections.xProjection.textureQueue = Array.apply(null, {'length': length})
                     .map(function(e,i,a) {
                         var tex = gl.createTexture();
                         tex.image = new Image();
                         return tex});
-            
+
             gl.projections.yProjection = {
-                vertexPositionBuffer: 
+                vertexPositionBuffer:
                     createSquareVertexPositionBuffer(gl,2.0,0.5),
                 textureCoordBuffer: createTextureCoordBuffer(gl),
-            }           
+            }
             gl.projections.yProjection.textureQueue = Array.apply(null, {'length': length})
                     .map(function(e,i,a) {
                         var tex = gl.createTexture();
@@ -942,7 +949,7 @@
                     }
 
                     if (!thisFrame) debugger;
-                    
+
                     //if (numFrames == 1) {
                     //    ['x','y','z'].map(function(dim) {
                     //        g_frameViewer.glContext.projections[dim+'Projection']
@@ -1018,14 +1025,14 @@
                         if (response.hasOwnProperty('frame_'+g_frameBuffer.next())) {
                             $('#buffering_warning').text('buffering... press start to resume playback')
                         }
-                        
+
                         g_frameBuffer.addFrames(response)
 
                         $('#buff_min').text(g_frameBuffer.min())
                         $('#buff_max').text(g_frameBuffer.max())
                         $('#buff_curr').text(g_frameBuffer.current)
                         if (response.end != true) {
-                            fetchFrames() 
+                            fetchFrames()
                         } else {
                             fetching = false
                         }
@@ -1048,7 +1055,7 @@
             updateTextureData(context, context.projections.zProjection.textureQueue[i],true)
             updateTextureData(context, context.projections.xProjection.textureQueue[i],true)
             updateTextureData(context, context.projections.yProjection.textureQueue[i],true)
-            
+
             if (i === context.update) {
                 if (i === context.shaderProgram.frame_avg) {
                     context.render();
@@ -1076,7 +1083,7 @@
             }
 
 
-            
+
         }
 
         $('#start_button').click(function() {
@@ -1113,7 +1120,7 @@
             xProjection.vertexPositionBuffer = createSquareVertexPositionBuffer(gl,depth,height)
             yProjection.vertexPositionBuffer = createSquareVertexPositionBuffer(gl,width,depth)
         }
-        
+
 
         function loadRoiLabels(filepath) {
             if (typeof(filepath) === "undefined") {
@@ -1166,7 +1173,7 @@
                     g_frameViewer[key] = response[key];
                 });
 
-                $('#frame_num_label').text(g_frameViewer.length)  
+                $('#frame_num_label').text(g_frameViewer.length)
 
                 if (response['channel_0']) {
                     var chan1CutoffInput = $('#ch1_norm_input');
@@ -1202,12 +1209,12 @@
                     plane = response.planes[1]
                     $('#plane_select')
                        .append($('<option>', { plane : plane })
-                       .text(plane)); 
+                       .text(plane));
                 } else {
-                    $.each(response.planes, function(plane) { 
+                    $.each(response.planes, function(plane) {
                         $('#plane_select')
                            .append($('<option>', { plane : plane })
-                           .text(plane)); 
+                           .text(plane));
                    });
                 }
                 var loadButton = $('#load_dataset_button');
@@ -1242,7 +1249,7 @@
             var newUrl = '{{ url_for('.index',_external=True) }}?dataset=' + encodeURIComponent(g_filePath) +
                         '&channel=' + encodeURIComponent(g_frameViewer.channel) +
                         '&cycle=' + encodeURIComponent(g_frameViewer.cycle) +
-                        '&cutoff1=' + encodeURIComponent(g_normingVal[0]) + 
+                        '&cutoff1=' + encodeURIComponent(g_normingVal[0]) +
                         '&cutoff2=' + encodeURIComponent(g_normingVal[1]);
             window.history.pushState("string","dataset",newUrl);
 
@@ -1274,7 +1281,7 @@
                 if (fullPath.slice(-1) != '/') {
                     fullPath = fullPath + '/'
                 }
-                fullPath = fullPath + file  
+                fullPath = fullPath + file
             }
             $('#file_input').val(fullPath);
 
@@ -1305,7 +1312,7 @@
                     if (typeof(channelSelect.attr('set_val')) !== 'undefined') {
                         channelSelect.val(channelSelect.attr('set_val'));
                         channelSelect.removeAttr('set_val');
-                    } 
+                    }
                     channelSelect.prop('disabled', false);
                 });
                 fetchInfo(fullPath);
@@ -1327,7 +1334,7 @@
                 if (fullPath.slice(-1) != '/') {
                     fullPath = fullPath + '/'
                 }
-                fullPath = fullPath + file  
+                fullPath = fullPath + file
             }
             $('file_input').val(fullPath);
             g_filePath = fullPath
@@ -1381,7 +1388,7 @@
             var path = $('#file_input').val()
             if (path) {
                 $('#file_input').val(path.substring(0,path.lastIndexOf('/')))
-                fileSelection('') 
+                fileSelection('')
             }
         })
 
@@ -1452,6 +1459,43 @@
         }
 
 
+        function _load_roi(roi_id, color, info_tab) {
+            $.ajax({
+                url: '{{ url_for('.getRoi', _external=True) }}',
+                type: 'POST',
+                cache: false,
+                data: {
+                    path: g_filePath,
+                    id: roi_id,
+                    label: $('#label_select').val()
+                }
+            })
+            .done(function(response) {
+                const roi_id = Object.keys(response)[0];
+                if (typeof(roi_id) !== 'undefined') {
+                    if (typeof(color) === 'undefined') {
+                        color = tinycolor({h:Math.random()*360.0, s:65, v:50}).toRgb();
+                        color.r /= 255;
+                        color.g /= 255;
+                        color.b /= 255;
+                    }
+
+                    var newRoi = new roi(roi_id, color);
+                    newRoi.label = response[roi_id].label;
+                    newRoi.points = response[roi_id].points;
+                    if (typeof(info_tab) !== 'undefined') {
+                        newRoi.infoTab.remove();
+                        newRoi.infoTab = info_tab;
+                    }
+                    g_roiViewer.addRoi(newRoi);
+                }
+            })
+            .fail(function() {
+                alert('failed to load roi: ' + roi_id);
+            })
+            .always(function() {
+            });
+        }
 
         //TODO: reimplement mask style ROIs
         function _load_rois() {
@@ -1580,7 +1624,7 @@
                 fetchFrame(g_frameViewer.current - Math.abs(g_frameBuffer.frameDelta))
             }
         })
-        
+
         $('#frame_slider').mousedown(function() {
             $(this).addClass('moving')
         })
@@ -1649,7 +1693,7 @@
                 g_frameViewer.setCurrentPlane(1);
                 return;
             }
-            
+
             if (g_frameBuffer.hasVolume()) {
                 $('#volume_button').addClass('selected');
                 if (g_frameViewer.getCurrentPlane() == 0) {
@@ -1801,7 +1845,7 @@
 
             $('#label_select option[value="' + selected_value + '"]').remove();
             $('#label_select').val('').change();
-            
+
             $.ajax({
                 url: '{{ url_for('.deleteRoiSet', _external=True) }}',
                 type: 'POST',
@@ -1820,7 +1864,7 @@
         $('.handleButtonClick').click(_handle_button_click);
 
         function _add_marker(left, top, id) {
-            if ((!left) || (!top) || 
+            if ((!left) || (!top) ||
                 (left >= g_frameViewer.glContext.viewportWidth) ||
                 (top >= g_frameViewer.glContext.viewportHeight)) {
                 return;
@@ -2035,7 +2079,7 @@
                         alert('there was an error updating the ROI set');
                     }).always(function() {
                         b.removeClass('selected');
-                    });   
+                    });
                 }
             },
 
@@ -2058,7 +2102,7 @@
                 },
                 'select': function() {
                     g_frameViewer.allowDrag = false;
-                    
+
                     var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
                     g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
 
@@ -2066,7 +2110,7 @@
                             positioningContext.shaderProgram.startX,
                             point[0]/g_frameViewer.width);
                         positioningContext.uniform1f(
-                            positioningContext.shaderProgram.startY, 
+                            positioningContext.shaderProgram.startY,
                             1-point[1]/g_frameViewer.height);
                         drawColorMap(positioningContext, 0);
 
@@ -2092,7 +2136,7 @@
                         drawColorMap(positioningContext, 0);
                     });
 
-                    document.onmousemove = MouseHandlers.editRoi;    
+                    document.onmousemove = MouseHandlers.editRoi;
                 }
             },
 
@@ -2103,7 +2147,7 @@
                 },
                 'select': function() {
                     g_frameViewer.allowDrag = false;
-                    
+
                     var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
                     g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
 
@@ -2111,7 +2155,7 @@
                             positioningContext.shaderProgram.startX,
                             point[0]/g_frameViewer.width);
                         positioningContext.uniform1f(
-                            positioningContext.shaderProgram.startY, 
+                            positioningContext.shaderProgram.startY,
                             1-point[1]/g_frameViewer.height);
                         drawColorMap(positioningContext, 0);
 
@@ -2201,6 +2245,31 @@
                     //TODO: hold selected until ROI is saved on server
                     b.removeClass('selected');
                 }
+            },
+
+            'revert_roi_button': {
+                'deselect': function(b) {
+                    b.addClass('selected')
+                },
+                'select': function(b) {
+                    if (g_roiEditor.rois.length !== 0) {
+                        var roi = g_roiEditor.popRoi();
+                        _load_roi(roi.id, roi.color, roi.infoTab);
+                        roi.infoTab.removeClass('selected');
+                        $('#drawing_id').text('');
+                        $('#drawing_label').val('');
+                        if ($('#draw_roi_button').hasClass('selected')) {
+                            $('#draw_roi_button').removeClass('selected');
+                            ButtonClickEvents.draw_roi_button.deselect();
+                        }
+                        $('.roiEditButton').addClass('disabled');
+                        $('.roiEditButton.selected').map(function(){
+                            ButtonClickEvents[this.id].deselect($(this));
+                            $(this).removeClass('selected');
+                        });
+                    }
+                    b.removeClass('selected');
+                }
             }
         }
 
@@ -2219,7 +2288,7 @@
             }
         }
 
-        
+
         MouseHandlers = {
             'selectRoi': function(x, y) {
                 var button = $('#select_roi_button');
@@ -2274,7 +2343,7 @@
                 if (!g_roiEditor.rois.length) {
                     return;
                 }
-                
+
                 var roi = g_roiEditor.rois[0];
                 if (typeof(roi) !== "undefined") {
                     var points = roi.points;
@@ -2321,7 +2390,7 @@
                     var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
 
                     var newPoints = g_roiEditor.rois[0].points;
-                    
+
                     var plane = g_frameViewer.getCurrentPlane()-1;
                     if (plane < 0) {
                         newPoints.map(function(_, idx, arr) {
@@ -2363,7 +2432,11 @@
                 } else if (e.keyCode == 84) {
                     _handle_button_click({'target':
                         document.getElementById('delete_point_button')});
+                } else if (e.keyCode == 86) {
+                    _handle_button_click({'target':
+                        document.getElementById('revert_roi_button')});
                 }
+
             },
 
             'roiDrawingMode': function(e) {
@@ -2444,7 +2517,7 @@
             var parentOffset = $(this).parent().offset();
             var relX = e.pageX - parentOffset.left;
             var relY = $(this).height() - (e.pageY - parentOffset.top);
-            
+
             var pixelValues = new Uint8Array(4);
             positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
                 positioningContext.UNSIGNED_BYTE, pixelValues);
@@ -2457,7 +2530,6 @@
             if (typeof(g_roiEditor.mouseClickHandler) !== 'undefined') {
                 g_roiEditor.mouseClickHandler(transXval, transYval, e);
             }
-
         });
 
         $('#roi_editing_canvas').bind('mousedown', function() {
@@ -2475,7 +2547,7 @@
                 var parentOffset = $(this).parent().offset();
                 var relX = e.pageX - parentOffset.left;
                 var relY = $(this).height() - (e.pageY - parentOffset.top);
-                
+
                 var pixelValues = new Uint8Array(4);
                 positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
                     positioningContext.UNSIGNED_BYTE, pixelValues);
@@ -2483,7 +2555,7 @@
                 if (pixelValues[2] != 0) {
                     var transXval = pixelValues[0]*g_frameViewer.width/255;
                     var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
-                    
+
                     if ((typeof(g_roiEditor.mouseDragHandler) !== 'undefined') &&
                             (typeof(this.prevPoint) !== 'undefined')) {
                         g_roiEditor.mouseDragHandler(transXval,transYval,
@@ -2499,7 +2571,7 @@
             var parentOffset = $(this).parent().offset();
             var relX = e.pageX - parentOffset.left;
             var relY = $(this).height() - (e.pageY - parentOffset.top);
-            
+
             var pixelValues = new Uint8Array(4);
             positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
                 positioningContext.UNSIGNED_BYTE, pixelValues);
@@ -2540,7 +2612,7 @@
             var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
 
             var newPoints = g_roiEditor.rois[0].points;
-                    
+
             var plane = g_frameViewer.getCurrentPlane()-1;
             const vert_num = selected.id.substr(5);
             if (plane < 0) {
