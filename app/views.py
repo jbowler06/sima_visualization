@@ -114,7 +114,7 @@ def getInfo():
     norm_factors = {}
     for channel in xrange(seq.shape[4]):
         norm_factors['channel_' + str(channel)] = []
-    
+
     for frame_index in [0,int(length/2),-1]:
         frame = seq._get_frame(frame_index)
         for channel in xrange(seq.shape[4]):
@@ -156,7 +156,7 @@ def getChannels(directory):
 
     if (len(channels) > 1):
         channels += ['overlay']
-    return render_template('select_list.html',options=channels) 
+    return render_template('select_list.html',options=channels)
 
 
 @app.route('/getCycles/<directory>')
@@ -168,7 +168,7 @@ def getCycles(directory):
             ds = ImagingDataset.load(ds_path)
         except IOError:
             return ''
-        return render_template('select_list.html',options=range(ds.num_sequences)) 
+        return render_template('select_list.html',options=range(ds.num_sequences))
 
     return ''
 
@@ -209,9 +209,9 @@ def getRoiList():
 @app.route('/getComponenets', methods=['GET','POST'])
 def getComponents():
     ds_path = request.form.get('path')
-    label = request.form.get('label')   
+    label = request.form.get('label')
     quality = 100
-    
+
     if re.match('^ica',label) is not None:
         components = np.load(os.path.join(ds_path,label))['st_components']
     else:
@@ -225,13 +225,13 @@ def getComponents():
         cutoff = np.percentile(vol[np.where(np.isfinite(vol))],99)
         vol = vol*255/cutoff
         vol = np.clip(vol, 0, 255)
-        
+
         zsurf = np.nanmean(vol,axis=0)
         ysurf = np.nanmean(vol,axis=1)
         xsurf = np.nanmean(vol,axis=2).T
 
         label = 'component_' + str(i)
-            
+
         projectedRois[label] = {
                 'z':convertToB64Jpeg(zsurf.astype('uint8'),quality=quality),
                 'y':convertToB64Jpeg(ysurf.astype('uint8'),quality=quality),
@@ -244,7 +244,7 @@ def getComponents():
 @app.route('/getRoiMasks', methods=['GET','POST'])
 def getRoiMasks():
     ds_path = request.form.get('path')
-    label = request.form.get('label')   
+    label = request.form.get('label')
     index = request.form.get('index',type=int)
     overlay = True
     quality = 100
@@ -257,7 +257,7 @@ def getRoiMasks():
     else:
         indicies = range(num_rois)
     projectedRois = {}
-    
+
     if overlay == True:
         vol = np.zeros(list(dataset.frame_shape[:3])+[3])
         cmap = matplotlib.cm.jet
@@ -282,18 +282,18 @@ def getRoiMasks():
         cutoff = np.percentile(vol[np.where(np.isfinite(vol))],99)
         vol = vol*255/cutoff
         vol = np.clip(vol, 0, 255)
-        
+
         zsurf = np.nanmean(vol,axis=0)
         ysurf = np.nanmean(vol,axis=1)
         xsurf = np.swapaxes(np.nanmean(vol,axis=2),0,1)
-            
+
         projectedRois['rois'] = {
                 'z':convertToColorB64Jpeg(zsurf.astype('uint8'),quality=quality),
                 'y':convertToColorB64Jpeg(ysurf.astype('uint8'),quality=quality),
                 'x':convertToColorB64Jpeg(xsurf.astype('uint8'),quality=quality)
             }
         return jsonify(num_rois=num_rois,**projectedRois)
-    
+
     for i,roi in enumerate(rois):
         mask = roi.mask
         vol = np.array([plane.todense().astype(float) for plane in mask])
@@ -302,14 +302,14 @@ def getRoiMasks():
         cutoff = np.percentile(vol[np.where(np.isfinite(vol))],99)
         vol = vol*255/cutoff
         vol = np.clip(vol, 0, 255)
-        
+
         zsurf = np.nanmean(vol,axis=0)
         ysurf = np.nanmean(vol,axis=1)
         xsurf = np.nanmean(vol,axis=2).T
 
         if roi.label is None:
             roi.label = 'roi_' + str(i)
-            
+
         projectedRois[roi.label] = {
                 'z':convertToB64Jpeg(zsurf.astype('uint8'),quality=quality),
                 'y':convertToB64Jpeg(ysurf.astype('uint8'),quality=quality),
@@ -322,8 +322,8 @@ def getRoiMasks():
 @app.route('/getRois', methods=['GET','POST'])
 def getRois():
     ds_path = request.form.get('path')
-    label = request.form.get('label')   
-    
+    label = request.form.get('label')
+
     dataset = ImagingDataset.load(ds_path)
     convertedRois = {}
     try:
@@ -356,6 +356,46 @@ def getRois():
         }
 
     return jsonify(**convertedRois)
+
+
+@app.route('/getRoi', methods=['GET','POST'])
+def getRoi():
+    ds_path = request.form.get('path')
+    label = request.form.get('label')
+    roi_id = request.form.get('id')
+
+    dataset = ImagingDataset.load(ds_path)
+    convertedRois = {}
+    try:
+        rois = ROIList.load(os.path.join(dataset.savedir,'rois.pkl'),label=label)
+    except:
+        return jsonify({})
+
+    for i,roi in enumerate(rois):
+        if roi.id == roi_id:
+            break
+
+    roi_points = []
+    try:
+        for i in xrange(roi.im_shape[0]):
+            roi_points.append([])
+    except:
+        for i in xrange(np.max(np.array(roi.coords)[:,:,2])):
+            roi_points.append([])
+    for poly in roi.polygons:
+        coords = np.array(poly.exterior.coords)
+        if np.all(coords[-1] == coords[0]):
+            coords = coords[:-1]
+        plane = int(coords[0,-1])
+        coords = coords[:,:2].astype(int).tolist()
+        roi_points[plane].append(coords)
+
+    return jsonify({
+        roi.id : {
+            'label': roi.label,
+            'points': roi_points
+        }
+    })
 
 
 @app.route('/getFrames', methods=['GET','POST'])
@@ -394,12 +434,12 @@ def getFrames():
             continue
         elif frame_number == -1 and ds is not None:
             try:
-                time_averages = pickle.load(open(os.path.join(ds.savedir, 'time_averages.pkl')))  
+                time_averages = pickle.load(open(os.path.join(ds.savedir, 'time_averages.pkl')))
                 if not isinstance(time_averages,np.ndarray):
                     raise Exception('no time average')
             except:
                 vol = seq._get_frame(0)
-            else: 
+            else:
                 vol = ds.time_averages
                 for ch in xrange(vol.shape[3]):
                     subframe = vol[:,:,:,ch]
@@ -417,7 +457,7 @@ def getFrames():
             vol = np.hstack((vol[:,:,:,0]/norming_val[0],vol[:,:,:,1]/norming_val[1]))
             vol*=255
         frames['frame_'+str(frame_number)] = {};
-        
+
         for plane in planes:
             if plane == 0:
                 zsurf = np.nanmean(vol,axis=0)
@@ -435,7 +475,7 @@ def getFrames():
             else:
                 xsurf = np.zeros((vol.shape[1],vol.shape[0]))
                 xsurf[:,plane-1]=np.nanmean(zsurf,axis=1).T
-            
+
             frames['frame_'+str(frame_number)][plane] = {
                 'z':convertToB64Jpeg(zsurf.astype('uint8'),quality=quality),
                 'y':convertToB64Jpeg(ysurf.astype('uint8'),quality=quality),
@@ -451,7 +491,7 @@ def setRoiLabel():
     #old_label = request.form.get('oldLabel')
     old_label = ''
     new_label = request.form.get('newLabel')
-    
+
     if new_label == '':
         new_label = 'rois'
 
@@ -566,7 +606,7 @@ def simplifyRoi():
     roi_id = request.form.get('roiId')
     frame_shape = json.loads(request.form.get('frame_shape'))
     points = json.loads(request.form.get('points'))
-   
+
     roi_data = []
     for i,plane in enumerate(points):
         if plane is None or not len(plane):
@@ -605,7 +645,7 @@ def getFolders(directory):
     subfolders = [os.path.basename(fname) for fname in
         glob.glob(os.path.join(directory,'*')) if os.path.isdir(fname) or os.path.splitext(fname)[-1] =='.h5']
     subfolders = ['']+sorted(subfolders)
-    return render_template('select_list.html',options=subfolders) 
+    return render_template('select_list.html',options=subfolders)
 
 
 @app.route('/saveImage', methods=['GET','POST'])
