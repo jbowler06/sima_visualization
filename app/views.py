@@ -564,6 +564,9 @@ def updateRoi():
         plane_data = np.concatenate((array_dat,z_dims),axis=2)
         roi_data.extend(list(plane_data))
 
+    if len(roi_data) == 0:
+        return jsonify(result="no polygons to save")
+
     for poly in roi_data:
         if poly.shape[0] < 3:
             raise Exception("unable to store polygon with less then 3 points")
