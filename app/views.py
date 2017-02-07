@@ -79,7 +79,7 @@ def index():
 def getInfo():
     ds_path = request.form.get('path')
 
-    if (os.path.splitext(ds_path)[-1] == '.sima'):
+    if ('dataset.pkl' in os.listdir(ds_path)):
         try:
             ds = ImagingDataset.load(ds_path)
         except IOError:
@@ -124,7 +124,7 @@ def getInfo():
 def getChannels(directory):
     ds_path = directory.replace(':!', '/')
 
-    if (os.path.splitext(ds_path)[-1] == '.sima'):
+    if ('dataset.pkl' in os.listdir(ds_path)):
         try:
             ds = ImagingDataset.load(ds_path)
         except IOError:
@@ -146,7 +146,7 @@ def getChannels(directory):
 def getCycles(directory):
     ds_path = directory.replace(':!', '/')
 
-    if (os.path.splitext(ds_path)[-1] == '.sima'):
+    if ('dataset.pkl' in os.listdir(ds_path)):
         try:
             ds = ImagingDataset.load(ds_path)
         except IOError:
@@ -348,7 +348,7 @@ def getFrames():
         channel = None
 
     ds = None
-    if (os.path.splitext(ds_path)[-1] == '.sima'):
+    if ('dataset.pkl' in os.listdir(ds_path)):
         ds = ImagingDataset.load(ds_path)
         seq = ds.sequences[cycle]
         channel = ds._resolve_channel(channel)
