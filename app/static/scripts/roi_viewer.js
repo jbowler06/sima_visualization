@@ -1,3 +1,14 @@
+String.prototype.hashCode = function() {
+    var hash = 0, i, chr;
+    if (this.length === 0) return hash;
+      for (i = 0; i < this.length; i++) {
+          chr   = this.charCodeAt(i);
+              hash  = ((hash << 5) - hash) + chr;
+                  hash |= 0; // Convert to 32bit integer
+                    }
+                      return hash;
+                      };
+
 function ROIViewer(canvas, frameViewer, slider) {
     var self = this;
     this.defaultTransparency = 50;
@@ -58,12 +69,7 @@ function ROIViewer(canvas, frameViewer, slider) {
         setRoiLoaded(i);
         setRoiViewing(i);
 
-        var color = tinycolor({h:Math.random()*360.0, s:65, v:50}).toRgb();
-        color.r /= 255;
-        color.g /= 255;
-        color.b /= 255;
-
-        var newRoi = new roi(roiLabels[i],color);
+        var newRoi = new roi(roiLabels[i]);
         newRoi.label = response[roiLabels[i]].label;
         newRoi.setPoints(this.gl,response[roiLabels[i]].points);
         this.rois[i] = newRoi;
@@ -85,7 +91,7 @@ function ROIViewer(canvas, frameViewer, slider) {
 
         this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
         this.gl.clearColor(0.0, 0.0, 0.0, 0.0)
-        
+
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.enable(this.gl.BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);

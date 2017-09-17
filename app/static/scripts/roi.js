@@ -1,9 +1,14 @@
-function roi(id,color) {
+function roi(id) {
+
+
+
     this.id = id;
     this.label = id;
-    this.color = color;
+    this.color = {};
     this.mask = {};
+    this.infoTab = {};
     this.display = true;
+
 
     //TODO: remove theis global reference
     this.widthScale = g_frameViewer.mainProjectionWidth/g_frameViewer.width;
@@ -11,10 +16,30 @@ function roi(id,color) {
 
     //TODO: remove theis global reference
     this.heightScale = g_frameViewer.mainProjectionHeight/g_frameViewer.height;
-    this.heightConst = g_frameViewer.mainProjectionHeight-g_frameViewer.mainProjectionHeight/2;
-    
+    this.heightConst = g_frameViewer.mainProjectionHeight - g_frameViewer.mainProjectionHeight/2;
+
     this.segments = [];
     this.points = [];
+
+    this.init = function(id) {
+        this.assign_color();
+        this.infoTab = this.createRoiTab();
+    }
+
+
+    this.assign_color = function() {
+        var color_code = this.label.split('').map(
+            function(e,a,i) {
+                return Number(String(e.charCodeAt(0)) + '359359')
+            }).reduce(function(a,b) {return a+b}) / 100.0 % 360;
+        var color = tinycolor({h:color_code, s:65, v:50}).toRgb();
+        color.r /= 255;
+        color.g /= 255;
+        color.b /= 255;
+
+        this.color = color;
+    }
+
 
     this.createRoiTab = function() {
         var thisId = 'roi_tab_' + this.id;
@@ -28,7 +53,6 @@ function roi(id,color) {
         return infoTab;
     }
 
-    this.infoTab = this.createRoiTab();
 
     this.setPoints = function(gl,roiPoints) {
         this.points = roiPoints;
@@ -39,7 +63,7 @@ function roi(id,color) {
                 var segment = {}
                 segment.polyBuffer = gl.createBuffer();
                 segment.polyBuffer.points = [];
-                
+
                 var ec = earcut([roiPoints[plane][seg]],true);
                 var tris = ec.vertices;
                 for (var i=0; i < tris.length; i++) {
@@ -147,4 +171,6 @@ function roi(id,color) {
             drawShapes(roiContext);
         }
     }*/
+
+    this.init();
 }
