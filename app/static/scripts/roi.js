@@ -2,8 +2,8 @@ function roi(id) {
 
 
 
-    this.id = id;
-    this.label = id;
+    this.id = String(id);
+    this.label = String(id);
     this.color = {};
     this.mask = {};
     this.infoTab = {};
@@ -28,7 +28,7 @@ function roi(id) {
 
 
     this.assign_color = function() {
-        var color_code = this.label.split('').map(
+        var color_code = this.id.split('').map(
             function(e,a,i) {
                 return Number(String(e.charCodeAt(0)) + '359359')
             }).reduce(function(a,b) {return a+b}) / 100.0 % 360;
