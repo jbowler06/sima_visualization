@@ -11,6 +11,11 @@ body {
     background-color: #000;
     color: #F00;
 }
+
+input[type=range] {
+    background: #000;
+}
+
 .canvasContainer {
     margin: auto auto;
     display: block;
