@@ -371,6 +371,15 @@
                         </div>
                      </td>
                      </tr>
+                     <tr>
+                     <td colspan="3">
+                         <div id="redraw_roi_button"
+                              class="button halfButton floatLeft slimlong
+                                     handleButtonClick roiEditButton disabled">
+                                     redra<u>w</u>
+                         </div>
+                     </td>
+                     </tr>
                  </table>
             </tr>
         </table>
@@ -2265,6 +2274,21 @@
                     }
                     b.removeClass('selected');
                 }
+            },
+
+            'redraw_roi_button': {
+                'deselect': function(b) {
+                    b.addClass('selected');
+                },
+                'select': function(b) {
+                    $('#draw_roi_button').addClass('selected');
+                    g_roiEditor.rois[0].points = [];
+                    g_roiEditor.rois[0].segments = [];
+                    g_roiEditor.render();
+
+                    ButtonClickEvents.draw_roi_button.select();
+                    b.removeClass('selected');
+                }
             }
         }
 
@@ -2430,6 +2454,9 @@
                 } else if (e.keyCode == 86) {
                     _handle_button_click({'target':
                         document.getElementById('revert_roi_button')});
+                } else if (e.keyCode == 87) {
+                    _handle_button_click({'target':
+                        document.getElementById('redraw_roi_button')});
                 }
 
             },
