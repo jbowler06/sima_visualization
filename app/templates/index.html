@@ -298,10 +298,10 @@
                        min="0"
                        max="100"
                        value="0"
-                       style="width:170px"></td>
+                       style="width:170px; margin-left:42px"></td>
             </tr>
             <tr>
-                <table>
+                <table style="margin-left:18px">
                     <tr>
                     <td>
                         <div id="draw_roi_button"
@@ -327,10 +327,10 @@
                     </tr>
                     <tr>
                     <td>
-                        <div id="save_roi_button"
-                             class="button halfButton floatLeft slim
-                                    handleButtonClick roiEditButton disabled">
-                             <u>s</u>ave
+                         <div id="redraw_roi_button"
+                              class="button halfButton floatLeft slim
+                                     handleButtonClick roiEditButton disabled">
+                                     redra<u>w</u>
                          </div>
                      </td>
                      <td>
@@ -373,11 +373,11 @@
                      </tr>
                      <tr>
                      <td colspan="3">
-                         <div id="redraw_roi_button"
-                              class="button halfButton floatLeft slimlong
-                                     handleButtonClick roiEditButton disabled">
-                                     redra<u>w</u>
-                         </div>
+                         <div id="save_roi_button"
+                             class="button halfButton floatLeft slimlong
+                                    handleButtonClick roiEditButton disabled">
+                             <u>s</u>ave
+                         </div> 
                      </td>
                      </tr>
                  </table>
@@ -1802,6 +1802,9 @@
         function addRoiLabel(newLabel) {
             var labelSelect = $('#label_select');
             labelSelect.prop('disabled', true);
+
+            $('#label_select')[0].add(new Option(newLabel, newLabel));
+            $('#label_select').val(newLabel).change();
             $('#label_select option').remove();
             $.ajax({
                 url: '{{ url_for('.setRoiLabel', _external=True) }}',
@@ -1824,8 +1827,8 @@
                 response.labels.map(function(e, a, i) {
                     console.log(e);
                     $('#label_select')[0].add(new Option(e, e));
-                    $('#label_select').val(newLabel).change();
                 });
+                $('#label_select').val(newLabel);
                 $('#label_select').prop('disabled', false);
             });
 
@@ -2050,10 +2053,14 @@
                     g_frameViewer.allowDrag = false;
                     if (!g_roiEditor.rois.length) {
                         var newRoi = new roi(Date.now());
-                        _edit_roi(newRoi)
+                        _edit_roi(newRoi);
+
+                        console.log(g_roiEditor.rois[0]);
                     }
                     g_roiEditor.mouseClickHandler = MouseHandlers.drawRoi;
                     g_roiEditor.mouseDragHandler = MouseHandlers.drawRoi;
+                    
+                    console.log(g_roiEditor.rois[0]);
                 }
             },
 
@@ -2352,6 +2359,9 @@
                             g_roiEditor.gl,plane_idx,0,[x,y]);
                     }
                 } else {
+                    console.log('here 2');
+                    console.log(g_roiEditor.rois[0]);
+
                     g_roiEditor.rois[0].addPoint(
                         g_roiEditor.gl,g_frameViewer.getCurrentPlane()-1,0,[x,y]);
                 }
