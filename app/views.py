@@ -183,7 +183,6 @@ def getLabels():
 def getRoiList():
     ds_path = request.form.get('path')
     label = request.form.get('label')
->>>>>>> frame_average
 
     return render_template('select_list.html', options=['']+labels)
 
