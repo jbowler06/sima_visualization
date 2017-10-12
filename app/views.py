@@ -108,14 +108,14 @@ def getInfo():
                     norm_factors['channel_'+str(channel)] += [factor]
 
     json = {
-        'planes': range(seq.shape[1]+1),
-        'height': seq.shape[2],
-        'width': seq.shape[3],
+        'planes': range(int(seq.shape[1]+1)),
+        'height': int(seq.shape[2]),
+        'width': int(seq.shape[3]),
         'length': length
     }
 
     for channel in norm_factors.keys():
-        json[channel] = max(1, int(np.nanmean(norm_factors[channel])))
+        json[channel] = int(max(1,int(np.nanmean(norm_factors[channel]))))
 
     return jsonify(**json)
 
@@ -163,18 +163,27 @@ def getLabels():
     try:
         dataset = ImagingDataset.load(ds_path)
     except:
-        return ''
+        return jsonify({ 'labels': [] })
 
     try:
         with open(os.path.join(dataset.savedir, 'rois.pkl'), 'rb') as f:
             labels = pickle.load(f).keys()
     except:
-        return ''
+        #return ''
+        return jsonify({ 'labels': [] })
 
     labels.extend(
-        map(os.path.basename, glob.glob(os.path.join(ds_path, 'ica*.npz'))))
-    labels.extend(
         map(os.path.basename, glob.glob(os.path.join(ds_path, 'opca*.npz'))))
+
+    #return render_template('select_list.html',options=['']+labels)
+    return jsonify({ 'labels': labels })
+
+
+@app.route('/getRoiList', methods=['GET','POST'])
+def getRoiList():
+    ds_path = request.form.get('path')
+    label = request.form.get('label')
+>>>>>>> frame_average
 
     return render_template('select_list.html', options=['']+labels)
 
@@ -185,8 +194,8 @@ def getComponents():
     label = request.form.get('label')
     quality = 100
 
-    if re.match('^ica', label) is not None:
-        components = np.load(os.path.join(ds_path, label))['st_components']
+    if re.match('^ica',label) is not None:
+        components = np.load(os.path.join(ds_path,label))['st_components']
     else:
         components = np.load(os.path.join(ds_path, label))['oPCs']
 
@@ -269,9 +278,9 @@ def getRoiMasks():
             'y': convertToColorB64Jpeg(ysurf.astype('uint8'), quality=quality),
             'x': convertToColorB64Jpeg(xsurf.astype('uint8'), quality=quality)
             }
-        return jsonify(num_rois=num_rois, **projectedRois)
+        return jsonify(num_rois=num_rois,**projectedRois)
 
-    for i, roi in enumerate(rois):
+    for i,roi in enumerate(rois):
         mask = roi.mask
         vol = np.array([plane.todense().astype(float) for plane in mask])
         cutoff = np.percentile(vol[np.where(np.isfinite(vol))], 25)
@@ -303,7 +312,10 @@ def getRois():
 
     dataset = ImagingDataset.load(ds_path)
     convertedRois = {}
-    rois = ROIList.load(os.path.join(dataset.savedir, 'rois.pkl'), label=label)
+    try:
+        rois = ROIList.load(os.path.join(dataset.savedir,'rois.pkl'),label=label)
+    except:
+        return jsonify({})
 
     for i, roi in enumerate(rois):
         if roi.id is None:
@@ -318,8 +330,10 @@ def getRois():
                 roi_points.append([])
         for poly in roi.polygons:
             coords = np.array(poly.exterior.coords)
-            plane = int(coords[0, -1])
-            coords = coords[:, :2].astype(int).tolist()
+            if np.all(coords[-1] == coords[0]):
+                coords = coords[:-1]
+            plane = int(coords[0,-1])
+            coords = coords[:,:2].astype(int).tolist()
             roi_points[plane].append(coords)
 
         convertedRois[roi.id] = {
@@ -330,7 +344,47 @@ def getRois():
     return jsonify(**convertedRois)
 
 
-@app.route('/getFrames', methods=['GET', 'POST'])
+@app.route('/getRoi', methods=['GET','POST'])
+def getRoi():
+    ds_path = request.form.get('path')
+    label = request.form.get('label')
+    roi_id = request.form.get('id')
+
+    dataset = ImagingDataset.load(ds_path)
+    convertedRois = {}
+    try:
+        rois = ROIList.load(os.path.join(dataset.savedir,'rois.pkl'),label=label)
+    except:
+        return jsonify({})
+
+    for i,roi in enumerate(rois):
+        if roi.id == roi_id:
+            break
+
+    roi_points = []
+    try:
+        for i in xrange(roi.im_shape[0]):
+            roi_points.append([])
+    except:
+        for i in xrange(np.max(np.array(roi.coords)[:,:,2])):
+            roi_points.append([])
+    for poly in roi.polygons:
+        coords = np.array(poly.exterior.coords)
+        if np.all(coords[-1] == coords[0]):
+            coords = coords[:-1]
+        plane = int(coords[0,-1])
+        coords = coords[:,:2].astype(int).tolist()
+        roi_points[plane].append(coords)
+
+    return jsonify({
+        roi.id : {
+            'label': roi.label,
+            'points': roi_points
+        }
+    })
+
+
+@app.route('/getFrames', methods=['GET','POST'])
 def getFrames():
     ds_path = request.form.get('path')
     requestFrames = request.form.getlist('frames[]', type=int)
@@ -366,9 +420,8 @@ def getFrames():
             continue
         elif frame_number == -1 and ds is not None:
             try:
-                time_averages = pickle.load(
-                    open(os.path.join(ds.savedir, 'time_averages.pkl')))
-                if not isinstance(time_averages, np.ndarray):
+                time_averages = pickle.load(open(os.path.join(ds.savedir, 'time_averages.pkl')))
+                if not isinstance(time_averages,np.ndarray):
                     raise Exception('no time average')
             except:
                 vol = seq._get_frame(0)
@@ -388,11 +441,9 @@ def getFrames():
             vol /= ((norming_val[channel])/255)
             vol = np.clip(vol, 0, 255)
         else:
-            vol = np.hstack(
-                (vol[:, :, :, 0]/norming_val[0], vol[:, :, :, 1] /
-                 norming_val[1]))
-            vol *= 255
-        frames['frame_'+str(frame_number)] = {}
+            vol = np.hstack((vol[:,:,:,0]/norming_val[0],vol[:,:,:,1]/norming_val[1]))
+            vol*=255
+        frames['frame_'+str(frame_number)] = {};
 
         for plane in planes:
             if plane == 0:
@@ -409,8 +460,8 @@ def getFrames():
             if plane == 0:
                 xsurf = np.nanmean(vol, axis=2).T
             else:
-                xsurf = np.zeros((vol.shape[1], vol.shape[0]))
-                xsurf[:, plane-1] = np.nanmean(zsurf, axis=1).T
+                xsurf = np.zeros((vol.shape[1],vol.shape[0]))
+                xsurf[:,plane-1]=np.nanmean(zsurf,axis=1).T
 
             frames['frame_'+str(frame_number)][plane] = {
                 'z': convertToB64Jpeg(zsurf.astype('uint8'), quality=quality),
@@ -424,8 +475,12 @@ def getFrames():
 @app.route('/setRoiLabel', methods=['GET', 'POST'])
 def setRoiLabel():
     ds_path = request.form.get('path')
-    old_label = request.form.get('oldLabel')
+    #old_label = request.form.get('oldLabel')
+    old_label = ''
     new_label = request.form.get('newLabel')
+
+    if new_label == '':
+        new_label = 'rois'
 
     dataset = ImagingDataset.load(ds_path)
     if (old_label != ''):
@@ -441,7 +496,7 @@ def setRoiLabel():
     labels.extend(
         map(os.path.basename, glob.glob(os.path.join(ds_path, 'opca*.npz'))))
 
-    return render_template('select_list.html', options=['']+labels)
+    return jsonify({ 'labels': labels })
 
 
 @app.route('/deleteRoiSet', methods=['GET', 'POST'])
@@ -474,7 +529,7 @@ def selectRoi():
                 if poly.contains(point):
                     return jsonify(label=roi.label, id=roi.id)
 
-    return None
+    return jsonify({'error': 'roi not found'})
 
 
 @app.route('/updateRoi', methods=['GET', 'POST'])
@@ -495,7 +550,13 @@ def updateRoi():
         plane_data = np.concatenate((array_dat, z_dims), axis=2)
         roi_data.extend(list(plane_data))
 
-    roi = ROI(polygons=roi_data, im_shape=dataset.frame_shape[:3])
+    if len(roi_data) == 0:
+        return jsonify(result="no polygons to save")
+
+    for poly in roi_data:
+        if poly.shape[0] < 3:
+            raise Exception("unable to store polygon with less then 3 points")
+    roi = ROI(polygons=roi_data,im_shape=dataset.frame_shape[:3])
 
     roi.label = roi_label
     roi.id = roi_id
@@ -504,6 +565,7 @@ def updateRoi():
     except KeyError:
         rois = []
 
+    rois = filter(lambda r: r.id != roi_id, rois)
     rois.append(roi)
     dataset.add_ROIs(ROIList(rois), label=label)
 
@@ -581,7 +643,7 @@ def getFolders(directory):
 def saveImage():
     image = request.form.get('image')
     filename = request.form.get('filename')
-    fh = open("/home/jack/movie/"+filename, "wb")
+    fh = open("/home/jack/gt2497_5/"+filename, "wb")
     fh.write(image.decode('base64'))
     fh.close()
     return jsonify(status='complete')

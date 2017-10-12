@@ -17,6 +17,7 @@ function FrameViewer(gl) {
     this.cycle = 0;
     this.roiViewers = [];
     this.nChannels = 1;
+    this.frame_avg = 1;
 
     this.length = 0;
 
@@ -146,6 +147,6 @@ function FrameViewer(gl) {
         var projections = this.glContext.projections;
         projections.xProjection.texture.image.src = aFrame.x;
         projections.yProjection.texture.image.src = aFrame.y;
-        projections.zProjection.texture.image.src = aFrame.z;
+        //projections.zProjection.texture.image.src = aFrame.z;
     }
 };

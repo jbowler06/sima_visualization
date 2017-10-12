@@ -11,6 +11,11 @@ body {
     background-color: #000;
     color: #F00;
 }
+
+input[type=range] {
+    background: #000;
+}
+
 .canvasContainer {
     margin: auto auto;
     display: block;
@@ -25,7 +30,7 @@ body {
 #gl_canvas {
 }
 #roi_canvas {
-}   
+}
 #positioning_canvas {
     display: none;
 }
@@ -74,7 +79,7 @@ body {
     height: 20px;
     border: thin solid #0F0;
 
-    -webkit-user-select: none; /* Chrome/Safari */        
+    -webkit-user-select: none; /* Chrome/Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+ */
 }
@@ -106,6 +111,11 @@ body {
     height: 20px !important;
     padding: 2px !important;
     width: 61px !important;
+}
+.slimlong {
+    width: 203px !important;
+    height: 20px !important;
+    padding: 2px !important;
 }
 .slim span {
     height 5px; !important
@@ -206,6 +216,14 @@ input.norming_value_input{
     top: 100px;
 }
 
+#roi_control_container.selected {
+    background-color: #000;
+}
+
+#roi_control_container:hover {
+    background-color: #555;
+}
+
 .roiTab {
     border: thin solid #0F0;
     height: 50px;
@@ -263,7 +281,7 @@ input.norming_value_input{
     background-color: #555;
     cursor: pointer;
 
-    -webkit-user-select: none; /* Chrome/Safari */        
+    -webkit-user-select: none; /* Chrome/Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+ */
 }
@@ -295,7 +313,7 @@ input.norming_value_input{
     background-color: #555;
     cursor: pointer;
 
-    -webkit-user-select: none; /* Chrome/Safari */        
+    -webkit-user-select: none; /* Chrome/Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+ */
 }
@@ -304,7 +322,7 @@ input.norming_value_input{
     background-color: #555;
     cursor: pointer;
 
-    -webkit-user-select: none; /* Chrome/Safari */        
+    -webkit-user-select: none; /* Chrome/Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+ */
 }
@@ -320,7 +338,7 @@ input.norming_value_input{
 
 #drawing_controls {
     width: 250px;
-    height: 200px;
+    height: 250px;
     right: 0px;
     bottom: 0px;
     position: absolute;
@@ -330,23 +348,39 @@ input.norming_value_input{
 
 }
 
+#drawing_controls .disabled u {
+    color: #600;
+}
+
+#drawing_controls u {
+    color: #692;
+}
+
 .editablePoint {
     width: 0px;
     height: 0px;
     cursor: move;
     z-index: 100;
-    position: relative; 
+    position: relative;
     float: left;
     overflow: visible;
+}
+
+.editablePoint.deleteable {
+    cursor: cell;
 }
 
 .editableImageContainer {
     width: 10px;
     height: 10px;
-    background-image: url(../images/red-circle.png);
+    background-image: url(../images/blue-circle.png);
     background-size: 10px 10px;
     background-repeat: no-repeat;
     position: relative;
     left: -5px;
     top: -5px;
+}
+
+.deleteable .editableImageContainer {
+    background-image: url(../images/red-circle.png);
 }
