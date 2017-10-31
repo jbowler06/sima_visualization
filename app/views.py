@@ -27,6 +27,7 @@ from sima.segment import SmoothROIBoundaries
 from PIL import Image
 import StringIO
 
+global_var = False
 
 def convertToBin(arr):
     min_val = np.min(arr)
@@ -322,7 +323,7 @@ def getRois():
 
         roi_points = []
         try:
-            for i in xrange(roi.im_shape[0]):
+            for i in xrange(dataset.frame_shape[0]):
                 roi_points.append([])
         except:
             for i in xrange(np.max(np.array(roi.coords)[:, :, 2])):

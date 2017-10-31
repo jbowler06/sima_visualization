@@ -1,18 +1,17 @@
 String.prototype.hashCode = function() {
     var hash = 0, i, chr;
     if (this.length === 0) return hash;
-      for (i = 0; i < this.length; i++) {
-          chr   = this.charCodeAt(i);
-              hash  = ((hash << 5) - hash) + chr;
-                  hash |= 0; // Convert to 32bit integer
-                    }
-                      return hash;
-                      };
+    for (i = 0; i < this.length; i++) {
+        chr   = this.charCodeAt(i);
+        hash  = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
 
 function ROIViewer(canvas, frameViewer, slider) {
     var self = this;
     this.defaultTransparency = 50;
-
     this.canvas = canvas;
     this.frameViewer = frameViewer;
     frameViewer.roiViewers.push(this);
@@ -22,12 +21,26 @@ function ROIViewer(canvas, frameViewer, slider) {
     this.needsRender = false;
     this.drawing = false;
     this.drawingInfo = {};
-
     this.createContext = function() {
         this.transparencyAdjuster.val(this.defaultTransparency);
         this.initShaders();
         this.gl.enable(this.gl.GL_BLEND);
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+    }
+
+    // returns the array of ROI objects
+    this.getRois = function() {
+        return this.rois;
+    }
+
+    // TODO rename
+    this.getRoi = function(x, y, z) {
+        for (var i = 0; i < this.rois.length; i++) {
+            if (this.rois[i].isPointInRoi(x,y,z)) {
+                return this.rois[i].id;
+            }
+        }
+        return null;
     }
 
     this.clear = function() {
@@ -72,6 +85,8 @@ function ROIViewer(canvas, frameViewer, slider) {
         var newRoi = new roi(roiLabels[i]);
         newRoi.label = response[roiLabels[i]].label;
         newRoi.setPoints(this.gl,response[roiLabels[i]].points);
+        newRoi.polys = response[roiLabels[i]].polygons;
+        newRoi.bboxes = response[roiLabels[i]].bboxes;
         this.rois[i] = newRoi;
 
         $('#roi_control_heading roiPolygonsButton').addClass('on');
@@ -124,13 +139,13 @@ function ROIViewer(canvas, frameViewer, slider) {
     this.drawSegmentSurface = function(segment) {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, segment.polyBuffer);
         this.gl.vertexAttribPointer(
-                this.gl.shaderProgram.vertexPositionAttribute, 
-                segment.polyBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            this.gl.shaderProgram.vertexPositionAttribute,
+            segment.polyBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
         this.gl.uniform1f(this.gl.shaderProgram.opacityUniform,this.drawingInfo.opacity);
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, segment.indicesBuffer);
         this.gl.drawElements(
-                this.gl.TRIANGLES, segment.indicesBuffer.numItems, 
-                this.gl.UNSIGNED_SHORT, 0);
+            this.gl.TRIANGLES, segment.indicesBuffer.numItems,
+            this.gl.UNSIGNED_SHORT, 0);
     }
 
 
@@ -138,24 +153,24 @@ function ROIViewer(canvas, frameViewer, slider) {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, segment.boundaryBuffer);
         this.gl.uniform1f(this.gl.shaderProgram.opacityUniform,1.0);
         this.gl.vertexAttribPointer(
-            this.gl.shaderProgram.vertexPositionAttribute, 
-            segment.boundaryBuffer.itemSize, this.gl.FLOAT, 
-                false, 0, 0);
+            this.gl.shaderProgram.vertexPositionAttribute,
+            segment.boundaryBuffer.itemSize, this.gl.FLOAT,
+            false, 0, 0);
         this.gl.drawArrays(
-                this.gl.LINE_LOOP, 0, segment.boundaryBuffer.numItems);
+            this.gl.LINE_LOOP, 0, segment.boundaryBuffer.numItems);
     }
 
     this.drawSegmentBoundaryPoints = function(segment) {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, segment.boundaryBuffer);
         this.gl.uniform1f(this.gl.shaderProgram.opacityUniform,1.0);
         this.gl.vertexAttribPointer(
-            this.gl.shaderProgram.vertexPositionAttribute, 
-            segment.boundaryBuffer.itemSize, this.gl.FLOAT, 
-                false, 0, 0);
+            this.gl.shaderProgram.vertexPositionAttribute,
+            segment.boundaryBuffer.itemSize, this.gl.FLOAT,
+            false, 0, 0);
         this.gl.drawArrays(
-                this.gl.LINE_LOOP, 0, segment.boundaryBuffer.numItems);
+            this.gl.LINE_LOOP, 0, segment.boundaryBuffer.numItems);
         this.gl.drawArrays(
-                this.gl.POINTS, 0, segment.boundaryBuffer.numItems);
+            this.gl.POINTS, 0, segment.boundaryBuffer.numItems);
     }
 
     this.drawPolygonRois = function(count) {
@@ -170,12 +185,15 @@ function ROIViewer(canvas, frameViewer, slider) {
             var segments = thisRoi.getSegments(this.drawingInfo.planes[this.drawingInfo.planeIndex]);
             var color = thisRoi.color;
 
-            this.gl.uniform3f(this.gl.shaderProgram.colorUniform,color.r,color.g,color.b);
             for (var i = 0; i < segments.length; i++) {
                 var segment = segments[i];
+                this.gl.uniform3f(this.gl.shaderProgram.colorUniform, color.r, color.b, color.g);
                 this.drawSegmentSurface(segment);
+
+                if (thisRoi.getMarked()) {
+                    this.gl.uniform3f(this.gl.shaderProgram.colorUniform, 1, .2, 0);
+                }
                 this.drawSegmentBoundary(segment);
-                //this.drawSegmentBoundaryPoints(segment);
             }
         }
 
@@ -194,7 +212,7 @@ function ROIViewer(canvas, frameViewer, slider) {
             this.drawing = false;
         }
     }
-    
+
     this.roi = function(id) {
         return this.rois.find(function(element, array, index) {
             if (element.id == id) {
@@ -229,7 +247,7 @@ function ROIViewer(canvas, frameViewer, slider) {
 
         self.render();
     }
-    
+
     this.transparencyAdjuster.on('input',function() {
         self.render();
     });

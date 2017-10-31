@@ -1,14 +1,17 @@
 function roi(id) {
 
 
-
     this.id = String(id);
     this.label = String(id);
     this.color = {};
+    this.isMarked = false;
     this.mask = {};
     this.infoTab = {};
     this.display = true;
 
+    // stores the polygons of the roi & their bounding boxes
+    this.polys = []
+    this.bboxes = []
 
     //TODO: remove theis global reference
     this.widthScale = g_frameViewer.mainProjectionWidth/g_frameViewer.width;
@@ -26,6 +29,88 @@ function roi(id) {
         this.infoTab = this.createRoiTab();
     }
 
+    // TODO consider updating a bbox field whenever the points are updated
+    this.calculateBbox = function(polygon) {
+
+        var minX = polygon[0][0], maxX = polygon[0][0];
+        var minY = polygon[0][1], maxY = polygon[0][1];
+
+        for (var n = 1; n < polygon.length; n++) {
+            var q = polygon[n];
+            minX = Math.min(q[0], minX);
+            maxX = Math.max(q[0], maxX);
+            minY = Math.min(q[1], minY);
+            maxY = Math.max(q[1], maxY);
+        }
+
+        return [minX, minY, maxX, maxY];
+    }
+
+    this.isPointInPolygon = function(x, y, polygon) {
+        var isInside = false;
+        var bbox = this.calculateBbox(polygon);
+
+        // if pt isn't in the bbox return false
+        if (x < bbox[0] || y < bbox[1] || x > bbox[2] || y > bbox[3]) {
+            return isInside;
+        }
+
+        var i = 0, j = polygon.length-1;
+        var x0, y0, x1, y1;
+        for (i, j; i < polygon.length; j = i++) {
+
+            x0 = polygon[i][0], x1 = polygon[j][0];
+            y0 = polygon[i][1], y1 = polygon[j][1];
+
+            if ( (polygon[i][1] > y) != (polygon[j][1] > y) && x < (polygon[j][0] - polygon[i][0]) * (y - polygon[i][1]) / (polygon[j][1] - polygon[i][1]) + polygon[i][0]) {
+                isInside = !isInside;
+            }
+        }
+        return isInside;
+    }
+
+    this.isPointInRoi = function(x, y, z) {
+
+        for (var i = 0; i < this.points[z].length; i++) {
+            if (this.isPointInPolygon(x, y, this.points[z][i].slice(0))) return true;
+        }
+
+        //
+        // for (var i = 0; i < this.points.length; i++) {
+        //   for (var j = 0; j < this.points[i].length; j++) {
+        //     if (this.isPointInPolygon(x,y, this.points[i][j])) return true;
+        //   }
+        // }
+
+        // for (var plane in this.points) {
+        //
+        //   console.log("------------------ new plane ----------------------------");
+        //   console.log(plane);
+        //   if (plane.length > 0) {
+        //     for (var currPoly in plane) {
+        //       if (this.isPointInPolygon(x,y, currPoly)) return true;
+        //     }
+        //   }
+        // }
+
+        return false;
+
+        // for (var i = 0; i < this.polys.length; i++) {
+        //   isInside = false;
+        //   currPoly = this.polys[i];
+        //   currBbox = this.bboxes[i];
+        //
+        //
+        //
+        //   var polyLen = currPoly.length;
+        //
+        //
+        //   if (isInside) return isInside;
+        //
+        // }
+        // return false;
+    }
+
 
     this.assign_color = function() {
         var color_code = this.id.split('').map(
@@ -40,14 +125,22 @@ function roi(id) {
         this.color = color;
     }
 
+    this.setMarked = function(markVal) {
+        this.isMarked = markVal;
+    }
+
+    this.getMarked = function() {
+        return this.isMarked;
+    }
+
 
     this.createRoiTab = function() {
         var thisId = 'roi_tab_' + this.id;
         var infoTab = $('#roi_tab_template').clone(true)
-                              .attr('id',thisId)
-                              .removeClass('hidden')
-                              .addClass('activeRoiTab')
-                              .appendTo('#roi_tab_container');
+            .attr('id',thisId)
+            .removeClass('hidden')
+            .addClass('activeRoiTab')
+            .appendTo('#roi_tab_container');
         infoTab.find('.roiNumberSpan').text('');
         infoTab.find('.roiIdSpan').text(id);
         return infoTab;
@@ -58,6 +151,7 @@ function roi(id) {
         this.points = roiPoints;
         this.type = 'polygons';
         for (var plane in roiPoints) {
+
             this.segments[parseInt(plane)] = [];
             for (var seg = 0; ((typeof(roiPoints[plane]) !== "undefined") && (seg < roiPoints[plane].length)); seg++) {
                 var segment = {}
@@ -136,7 +230,7 @@ function roi(id) {
     /*
     this.setPointsBin = function(roiInfo) {
         var roiObj = this;
-        var context = 
+        var context =
                 $('<canvas width="'+roiInfo.length+'" height="1" style="display:none">',
                     {'class':roiInfo.label+'_buffer',
                      'id':'myId'})
