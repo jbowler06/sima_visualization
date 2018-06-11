@@ -67,7 +67,7 @@ function roi(id) {
             }
         }
         return isInside;
-    }
+    };
 
     this.isPointInRoi = function(x, y, z) {
 
@@ -75,41 +75,9 @@ function roi(id) {
             if (this.isPointInPolygon(x, y, this.points[z][i].slice(0))) return true;
         }
 
-        //
-        // for (var i = 0; i < this.points.length; i++) {
-        //   for (var j = 0; j < this.points[i].length; j++) {
-        //     if (this.isPointInPolygon(x,y, this.points[i][j])) return true;
-        //   }
-        // }
-
-        // for (var plane in this.points) {
-        //
-        //   console.log("------------------ new plane ----------------------------");
-        //   console.log(plane);
-        //   if (plane.length > 0) {
-        //     for (var currPoly in plane) {
-        //       if (this.isPointInPolygon(x,y, currPoly)) return true;
-        //     }
-        //   }
-        // }
-
         return false;
 
-        // for (var i = 0; i < this.polys.length; i++) {
-        //   isInside = false;
-        //   currPoly = this.polys[i];
-        //   currBbox = this.bboxes[i];
-        //
-        //
-        //
-        //   var polyLen = currPoly.length;
-        //
-        //
-        //   if (isInside) return isInside;
-        //
-        // }
-        // return false;
-    }
+    };
 
 
     this.assign_color = function() {
@@ -123,15 +91,15 @@ function roi(id) {
         color.b /= 255;
 
         this.color = color;
-    }
+    };
 
     this.setMarked = function(markVal) {
         this.isMarked = markVal;
-    }
+    };
 
     this.getMarked = function() {
         return this.isMarked;
-    }
+    };
 
 
     this.createRoiTab = function() {
@@ -144,7 +112,7 @@ function roi(id) {
         infoTab.find('.roiNumberSpan').text('');
         infoTab.find('.roiIdSpan').text(id);
         return infoTab;
-    }
+    };
 
 
     this.setPoints = function(gl,roiPoints) {
@@ -198,7 +166,7 @@ function roi(id) {
                 this.segments[parseInt(plane)].push(segment);
             }
         }
-    }
+    };
 
     this.addPoint = function(gl,plane,segment,point) {
         if (typeof(this.points[plane]) === "undefined") {
@@ -211,7 +179,7 @@ function roi(id) {
 
         this.points[plane][segment].push(point);
         this.setPoints(gl,this.points);
-    }
+    };
 
     this.getSegments = function(plane) {
         if (typeof this.segments[plane] == 'undefined') {
@@ -219,12 +187,12 @@ function roi(id) {
         }
 
         return this.segments[plane]
-    }
+    };
 
     this.setMask = function (projections) {
         this.type = 'mask'
         this.mask = projections
-    }
+    };
 
 
     /*

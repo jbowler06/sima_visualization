@@ -27,8 +27,6 @@ from sima.segment import SmoothROIBoundaries
 from PIL import Image
 import StringIO
 
-global_var = False
-
 def convertToBin(arr):
     min_val = np.min(arr)
     arr += min_val

@@ -2577,57 +2577,6 @@
                     document.getElementById('move_roi_button')});
             }
 
-
-            // ------------------------------------------------------
-
-            // STUFF THAT WORKS THAT WAS COMMENTED OUT FOR TESTING
-            // var button = $('#select_roi_button');
-            // if (button.hasClass('disabled')) {
-            //     return;
-            // }
-            //
-            // // if auto save is selected, then save should be triggered
-            // // before a new selection
-            // if ($("#auto_save").is(':checked')) {
-            //   _handle_button_click({'target':
-            //       document.getElementById('save_roi_button')});
-            // }
-            //
-            // //TODO: use webgl to pick in client with out ajax call
-            // button.addClass('disabled');
-            // $.ajax({
-            //     url: '{{ url_for('.selectRoi', _external=True) }}',
-            //     type: 'POST',
-            //     cache: false,
-            //     data: {
-            //         path: g_filePath,
-            //         label: $('#label_select').val(),
-            //         x: x,
-            //         y: y,
-            //         z: (g_frameViewer.getCurrentPlane()-1)
-            //     }})
-            //     .done(function(response) {
-            //         if (typeof(response.error) === "undefined") {
-            //             button.removeClass('selected');
-            //             ButtonClickEvents['select_roi_button'].deselect(button)
-            //
-            //             var roi = g_roiViewer.popRoi(response.id);
-            //             if (typeof(roi) !== 'undefined'){
-            //                 _edit_roi(roi);
-            //             }
-            //         }
-            //     })
-            //     .always(function() {
-            //         button.removeClass('disabled');
-            //
-            //         // if auto move is selected, then move should be triggered
-            //         // after selection
-            //         if ($("#auto_move").is(':checked')) {
-            //           _handle_button_click({'target':
-            //               document.getElementById('move_roi_button')});
-            //         }
-            //
-            //     });
         },
 
         'drawRoi': function(x, y, e) {

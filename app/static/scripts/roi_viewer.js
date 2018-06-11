@@ -191,7 +191,7 @@ function ROIViewer(canvas, frameViewer, slider) {
                 this.drawSegmentSurface(segment);
 
                 if (thisRoi.getMarked()) {
-                    this.gl.uniform3f(this.gl.shaderProgram.colorUniform, 1, .2, 0);
+                    this.gl.uniform3f(this.gl.shaderProgram.colorUniform, .55, .47, .49);
                 }
                 this.drawSegmentBoundary(segment);
             }
