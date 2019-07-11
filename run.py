@@ -2,4 +2,5 @@
 from app import app
 import config
 
-app.run(host='0.0.0.0', port=config.port, threaded=True, debug=True)
+app.config['APPLICATION_ROOT'] = '/jack/vis_server'
+app.run(host='0.0.0.0', port=config.port,  debug=True, processes=1)

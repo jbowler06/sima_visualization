@@ -41,12 +41,24 @@
         </div>
         <div>
             <p><span class="floatLeft">Contrast Cutoff:</span>
+                <div id="channel1_contrast_control" style="float:left">
+                <span style="float: left; margin-left:20px">Channel 1:</span>
                 <input type="text"
                        class="norming_value_input floatLeft"
-                       id="ch1_norm_input">
+                       id="ch1_norm_input_low">
                 <input type="text"
-                       class="norming_value_input floatLeft hidden"
-                       id="ch2_norm_input">
+                       class="norming_value_input floatLeft"
+                       id="ch1_norm_input_high">
+                </div>
+                <div id="channel2_contrast_control" class="hidden" style="float:left">
+                <span style="float: left; margin-left:20px">Channel 2:</span>
+                <input type="text"
+                       class="norming_value_input floatLeft"
+                       id="ch2_norm_input_low">
+                <input type="text"
+                       class="norming_value_input floatLeft"
+                       id="ch2_norm_input_high">
+                </div>
             </p>
         </div>
         <p style="width:auto;margin:0px 5px">
@@ -917,11 +929,15 @@
         {% endif %}
 
         {% if cutoff1 %}
-        $('#ch1_norm_input').attr('set_val','{{ cutoff1 }}');
+            let cutoff1 = JSON.parse('[{{cutoff1}}]');
+            $('#ch1_norm_input_low').attr('set_val', cutoff1[0]);
+            $('#ch1_norm_input_high').attr('set_val', cutoff1[1]);
         {% endif %}
 
         {% if cutoff2 %}
-        $('#ch2_norm_input').attr('set_val','{{ cutoff2 }}');
+            let cutoff2 = JSON.parse('[{{cutoff2}}]');
+            $('#ch2_norm_input_low').attr('set_val', cutoff2[0]);
+            $('#ch2_norm_input_high').attr('set_val', cutoff2[1]);
         {% endif %}
         {% endif %}
     });
@@ -1052,7 +1068,7 @@
                             path: g_filePath,
                             planes: [$('#plane_select').val()],
                             frameDelta: g_frameBuffer.frameDelta,
-                            normingVal: g_normingVal,
+                            normingVal: JSON.stringify(g_normingVal),
                             channel: g_frameViewer.channel,
                             cycle: g_frameViewer.cycle,
                             sequenceId: g_frameBuffer.sequenceId
@@ -1067,8 +1083,10 @@
 
                         $('#indicator').show();
                         $('#indicator').fadeOut(1000);
-                        if (response.hasOwnProperty('frame_'+g_frameBuffer.next())) {
-                            $('#buffering_warning').text('buffering... press start to resume playback');
+                        if (response.hasOwnProperty(
+                                'frame_' + g_frameBuffer.next())) {
+                            $('#buffering_warning').text(
+                                'buffering... press start to resume playback');
                         }
 
                         g_frameBuffer.addFrames(response);
@@ -1189,9 +1207,6 @@
 //                });
             }
         }
-
-
-
     }
 
     $('#start_button').click(function() {
@@ -1307,26 +1322,28 @@
             $('#frame_num_label').text(g_frameViewer.length)
 
             if (response['channel_0']) {
-                var chan1CutoffInput = $('#ch1_norm_input');
+                var chan1CutoffInput = $('#ch1_norm_input_high');
                 if (typeof(chan1CutoffInput.attr('set_val')) !== 'undefined') {
                     chan1CutoffInput.val(chan1CutoffInput.attr('set_val'));
                     chan1CutoffInput.removeAttr('set_val');
                 } else {
-                    chan1CutoffInput.val(response['channel_0'])
+                    $('#ch1_norm_input_low').val(response['channel_0'][0])
+                    $('#ch1_norm_input_high').val(response['channel_0'][1])
                 }
             }
 
             if (response['channel_1']) {
-                var chan2CutoffInput = $('#ch2_norm_input');
-                chan2CutoffInput.removeClass('hidden');
+                var chan2CutoffInput = $('#ch2_norm_input_high');
+                $('#channel2_contrast_control').removeClass('hidden')
                 if (typeof(chan2CutoffInput.attr('set_val')) !== 'undefined') {
                     chan2CutoffInput.val(chan2CutoffInput.attr('set_val'));
                     chan2CutoffInput.removeAttr('set_val');
                 } else {
-                    chan2CutoffInput.val(response['channel_1'])
+                    $('#ch2_norm_input_low').val(response['channel_1'][0])
+                    $('#ch2_norm_input_high').val(response['channel_1'][1])
                 }
             } else {
-                $('#ch2_norm_input').addClass('hidden');
+                $('#channel2_contrast_control').addClass('hidden');
             }
 
             fetching = true
@@ -1369,7 +1386,11 @@
         g_frameViewer.initMouse($('#roi_editing_canvas'));
         g_frameBuffer = new FrameBuffer(Date.now(),1000,g_frameViewer.planes);
         g_frameBuffer.set_planes(g_frameViewer.planes);
-        g_normingVal = [$('#ch1_norm_input').val(),$('#ch2_norm_input').val()]
+        g_normingVal = [
+            [$('#ch1_norm_input_low').val(), $('#ch1_norm_input_high').val()],
+            [$('#ch2_norm_input_low').val(), $('#ch2_norm_input_high').val()],
+        ]
+
         if (!g_normingVal) {
             alert('normalizing value unset')
         }
@@ -1419,7 +1440,8 @@
         if (fullPath.slice(-5) == '.sima') {
             $('#cycle_select_container').removeClass('hidden');
             $('#cycle_select').prop('disabled',true)
-            $.get('{{ url_for('.getCycles',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+            $.get("{{ url_for('.getCycles', directory='', _external=True)}}" +
+                  encodeURIComponent(fullPath), function(html) {
                 var cycleSelect = $('#cycle_select');
                 cycleSelect.html('');
                 cycleSelect.html(html);
@@ -1436,7 +1458,8 @@
         if ((fullPath.slice(-5) == '.sima') || (fullPath.slice(-2) == 'h5')) {
             $('#file_select').html('')
             $('#channel_select').prop('disabled',true)
-            $.get('{{ url_for('.getChannels',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+            $.get("{{ url_for('.getChannels', directory='',_external=True)}}" +
+                  encodeURIComponent(fullPath), function(html) {
                 var channelSelect = $('#channel_select');
                 channelSelect.html('');
                 channelSelect.html(html);
@@ -1450,7 +1473,8 @@
         } else {
             $('#file_input').val(fullPath)
             $('#file_select').prop('disabled', true);
-            $.get('{{ url_for('.getFolders',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+            $.get("{{ url_for('.getFolders', directory='')}}" +
+                  encodeURIComponent(fullPath), function(html) {
                 $('#file_select').html('')
                 $('#file_select').html(html)
                 $('#file_select').prop('disabled', false);
@@ -1490,8 +1514,10 @@
     $('#load_button').click(function() {
         $('#load_button').addClass('selected');
         $('#load_box').removeClass('hidden');
-        $('#ch1_norm_input').val(g_normingVal[0]);
-        $('#ch2_norm_input').val(g_normingVal[1]);
+        $('#ch1_norm_input_low').val(g_normingVal[0][0]);
+        $('#ch1_norm_input_high').val(g_normingVal[0][1]);
+        $('#ch2_norm_input_low').val(g_normingVal[1][0]);
+        $('#ch2_norm_input_high').val(g_normingVal[1][1]);
     });
 
     $('#options_button').click(function(){
@@ -1612,7 +1638,7 @@
                         color.b /= 255;
                     }
 
-                    var newRoi = new roi(roi_id, color);
+                    var newRoi = new Roi(roi_id, color);
                     newRoi.label = response[roi_id].label;
                     newRoi.points = response[roi_id].points;
                     if (typeof(info_tab) !== 'undefined') {
@@ -1808,14 +1834,16 @@
     $('#single_step_button').click(function(){
         if (!$(this).hasClass('selected')) {
             $('.stepButton').addClass('selected');
-            fetchFrame(g_frameViewer.current + Math.abs(g_frameBuffer.frameDelta))
+            fetchFrame(
+                g_frameViewer.current + Math.abs(g_frameBuffer.frameDelta))
         }
     })
 
     $('#single_reverse_button').click(function(){
         if (!$(this).hasClass('selected')) {
             $('.stepButton').addClass('selected');
-            fetchFrame(g_frameViewer.current - Math.abs(g_frameBuffer.frameDelta))
+            fetchFrame(
+                g_frameViewer.current - Math.abs(g_frameBuffer.frameDelta))
         }
     })
 
@@ -1830,19 +1858,20 @@
 
     function fetchFrame(index) {
         g_frameBuffer.set_next(index);
-        if (!g_frameBuffer.has_next($('#plane_select').val(),g_frameViewer.frame_avg)) {
+        if (!g_frameBuffer.has_next($('#plane_select').val(),
+                                    g_frameViewer.frame_avg)) {
             var indices = Array.apply(null,{length: g_frameViewer.frame_avg})
                 .map(Number.call, Number)
                 .map(function(e) {return (e+index);});
             $.ajax({
-                url: '{{ url_for('.getFrames', _external=True) }}',
+                url: "{{ url_for('.getFrames', _external=True) }}",
                 type: 'POST',
                 cache: false,
                 data: {
                     frames: indices,
                     planes: [$('#plane_select').val()],
                     path: g_filePath,
-                    normingVal: g_normingVal,
+                    normingVal: JSON.stringify(g_normingVal),
                     channel: g_frameViewer.channel,
                     cycle: g_frameViewer.cycle,
                     sequenceId: g_frameBuffer.sequenceId
@@ -1905,7 +1934,7 @@
                 frames: [g_frameBuffer.current],
                 planes: g_frameViewer.numPlanes(),
                 path: g_filePath,
-                normingVal: g_normingVal,
+                normingVal: JSON.stringify(g_normingVal),
                 channel: g_frameViewer.channel,
                 cycle: g_frameViewer.cycle,
                 sequenceId: g_frameBuffer.sequenceId
@@ -2010,7 +2039,7 @@
             //}
             $('#label_select')[0].add(new Option('None', ''));
             response.labels.map(function(e, a, i) {
-                console.log(e);
+                //console.log(e);
                 $('#label_select')[0].add(new Option(e, e));
             });
             $('#label_select').val(newLabel);
@@ -2087,7 +2116,7 @@
                 data: {
                     path: g_filePath,
                     label: $('#label_select').val(),
-                    points: JSON.stringify(roi.points),
+                    points: JSON.stringify(roi.getPoints()),
                     roiLabel: roi.label,
                     roiId: roi.id
                 }
@@ -2261,15 +2290,15 @@
 
                 g_frameViewer.allowDrag = false;
                 if (!g_roiEditor.rois.length) {
-                    var newRoi = new roi(Date.now());
+                    var newRoi = new Roi(Date.now());
                     _edit_roi(newRoi);
 
-                    console.log(g_roiEditor.rois[0]);
+                    // console.log(g_roiEditor.rois[0]);
                 }
                 g_roiEditor.mouseClickHandler = MouseHandlers.drawRoi;
                 g_roiEditor.mouseDragHandler = MouseHandlers.drawRoi;
 
-                console.log(g_roiEditor.rois[0]);
+                // console.log(g_roiEditor.rois[0]);
             }
         },
 
@@ -2287,7 +2316,7 @@
                         path: g_filePath,
                         frame_shape: JSON.stringify([g_frameViewer.numPlanes(),
                             g_frameViewer.height, g_frameViewer.width]),
-                        points: JSON.stringify(roi.points),
+                        points: JSON.stringify(roi.getPoints()),
                         roiId: roi.id
                     }
                 }).done(function(response) {
@@ -2337,7 +2366,7 @@
                 g_frameViewer.allowDrag = false;
 
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
-                g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
+                g_roiEditor.rois[0].getPoints()[plane][0].map(function(point, idx) {
 
                     positioningContext.uniform1f(
                         positioningContext.shaderProgram.startX,
@@ -2383,7 +2412,7 @@
                 g_frameViewer.allowDrag = false;
 
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
-                g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
+                g_roiEditor.rois[0].getPoints()[plane][0].map(function(point, idx) {
 
                     positioningContext.uniform1f(
                         positioningContext.shaderProgram.startX,
@@ -2586,7 +2615,6 @@
                         g_roiEditor.gl,plane_idx,0,[x,y]);
                 }
             } else {
-                console.log('here 2');
                 console.log(g_roiEditor.rois[0]);
 
                 g_roiEditor.rois[0].addPoint(
@@ -2603,7 +2631,7 @@
 
             var roi = g_roiEditor.rois[0];
             if (typeof(roi) !== "undefined") {
-                var points = roi.points;
+                var points = roi.getPoints();
                 var plane = g_frameViewer.getCurrentPlane()-1;
                 var planes = []
                 if (plane != -1) {
@@ -2646,7 +2674,7 @@
                 var transXval = pixelValues[0]*g_frameViewer.width/255;
                 var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
 
-                var newPoints = g_roiEditor.rois[0].points;
+                var newPoints = g_roiEditor.rois[0].getPoints();
 
                 var plane = g_frameViewer.getCurrentPlane()-1;
                 if (plane < 0) {
@@ -2698,8 +2726,19 @@
             } else if (e.keyCode == 75) {
                 _handle_button_click({'target':
                     document.getElementById('mark_roi_button')});
+            } else if ((e.keyCode >= 49) && (e.keyCode <= 57)) {
+                if (g_roiEditor.rois.length) {
+                    var plane = g_frameViewer.getCurrentPlane()-1;
+                    g_roiEditor.rois[0].setRadius(g_roiEditor.gl,plane,0,e.keyCode-48);
+                    g_roiEditor.render();
+                }
+            } else if (e.keyCode == 48) {
+                if (g_roiEditor.rois.length) {
+                    var plane = g_frameViewer.getCurrentPlane()-1;
+                    g_roiEditor.rois[0].setRadius(g_roiEditor.gl,plane,0,10);
+                    g_roiEditor.render();
+                }
             }
-
         },
 
         'roiDrawingMode': function(e) {
@@ -2709,7 +2748,7 @@
                 color.g /= 255;
                 color.b /= 255;
 
-                var newRoi = new roi(Date.now(),color);
+                var newRoi = new Roi(Date.now(),color);
                 _edit_roi(newRoi);
 
             } else if (e.keyCode == 83) {
@@ -2860,7 +2899,7 @@
         var pixelValues = new Uint8Array(4);
         positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
             positioningContext.UNSIGNED_BYTE, pixelValues);
-        console.log(pixelValues[0] + ' ' + pixelValues[1] + ' ' + pixelValues[2]);
+        // console.log(pixelValues[0] + ' ' + pixelValues[1] + ' ' + pixelValues[2]);
     });
 
     var selected = null,
@@ -2896,7 +2935,7 @@
         var transXval = pixelValues[0]*g_frameViewer.width/255;
         var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
 
-        var newPoints = g_roiEditor.rois[0].points;
+        var newPoints = g_roiEditor.rois[0].getPoints();
 
         var plane = g_frameViewer.getCurrentPlane()-1;
         const vert_num = selected.id.substr(5);

@@ -1,36 +1,66 @@
-function roi(id) {
+var Roi;
+var LinearRoi;
 
+Roi = function (roi_id) {
 
-    this.id = String(id);
-    this.label = String(id);
-    this.color = {};
-    this.isMarked = false;
-    this.mask = {};
-    this.infoTab = {};
-    this.display = true;
+    // field declaration
+    var id,
+        label,
+        color,
+        isMarked,
+        mask,
+        infoTab,
+        display,
+        polys,          // store the polygons of the roi
+        bboxes,         // roi bounding boxes
+        widthScale,
+        widthConst,
+        heightScale,
+        heightConst,
+        segments,
+        points;
 
-    // stores the polygons of the roi & their bounding boxes
-    this.polys = []
-    this.bboxes = []
+    // method declarations
+    var init,
+        calculateBbox,
+        isPointInPolygon,
+        isPointInRoi,
+        assign_color,
+        setMarked,
+        getMarked,
+        createRoiTab,
+        setPoints,
+        addPoint,
+        getSegments,
+        setMask;
 
-    //TODO: remove theis global reference
-    this.widthScale = g_frameViewer.mainProjectionWidth/g_frameViewer.width;
-    this.widthConst = g_frameViewer.mainProjectionWidth/2;
+    init = function (roi_id) {
+        id = String(roi_id);
+        label = String(roi_id);
+        color = {};
+        isMarked = false;
+        mask = {};
+        infoTab = {};
+        display = true;
+        polys = [];
+        bboxes= [];
+        segments = [];
+        points = [];
 
-    //TODO: remove theis global reference
-    this.heightScale = g_frameViewer.mainProjectionHeight/g_frameViewer.height;
-    this.heightConst = g_frameViewer.mainProjectionHeight - g_frameViewer.mainProjectionHeight/2;
+        //TODO: remove theis global reference
+        widthScale = g_frameViewer.mainProjectionWidth/g_frameViewer.width;
+        widthConst = g_frameViewer.mainProjectionWidth/2;
 
-    this.segments = [];
-    this.points = [];
-
-    this.init = function(id) {
-        this.assign_color();
-        this.infoTab = this.createRoiTab();
+        //TODO: remove theis global reference
+        heightScale = g_frameViewer.mainProjectionHeight/g_frameViewer.height;
+        heightConst = g_frameViewer.mainProjectionHeight -
+                      g_frameViewer.mainProjectionHeight/2;
+        assign_color();
+        infoTab = createRoiTab();
     }
 
     // TODO consider updating a bbox field whenever the points are updated
-    this.calculateBbox = function(polygon) {
+    calculateBbox = function(polygon) {
 
         var minX = polygon[0][0], maxX = polygon[0][0];
         var minY = polygon[0][1], maxY = polygon[0][1];
@@ -46,9 +76,9 @@ function roi(id) {
         return [minX, minY, maxX, maxY];
     }
 
-    this.isPointInPolygon = function(x, y, polygon) {
+    isPointInPolygon = function(x, y, polygon) {
         var isInside = false;
-        var bbox = this.calculateBbox(polygon);
+        var bbox = calculateBbox(polygon);
 
         // if pt isn't in the bbox return false
         if (x < bbox[0] || y < bbox[1] || x > bbox[2] || y > bbox[3]) {
@@ -62,17 +92,19 @@ function roi(id) {
             x0 = polygon[i][0], x1 = polygon[j][0];
             y0 = polygon[i][1], y1 = polygon[j][1];
 
-            if ( (polygon[i][1] > y) != (polygon[j][1] > y) && x < (polygon[j][0] - polygon[i][0]) * (y - polygon[i][1]) / (polygon[j][1] - polygon[i][1]) + polygon[i][0]) {
+            if ( (polygon[i][1] > y) != (polygon[j][1] > y) &&
+                  x < (polygon[j][0] - polygon[i][0]) * (y - polygon[i][1]) /
+                  (polygon[j][1] - polygon[i][1]) + polygon[i][0]) {
                 isInside = !isInside;
             }
         }
         return isInside;
     };
 
-    this.isPointInRoi = function(x, y, z) {
 
-        for (var i = 0; i < this.points[z].length; i++) {
-            if (this.isPointInPolygon(x, y, this.points[z][i].slice(0))) return true;
+    isPointInRoi = function(x, y, z) {
+        for (var i = 0; i < points[z].length; i++) {
+            if (isPointInPolygon(x, y, points[z][i].slice(0))) return true;
         }
 
         return false;
@@ -80,30 +112,31 @@ function roi(id) {
     };
 
 
-    this.assign_color = function() {
-        var color_code = this.id.split('').map(
+    assign_color = function() {
+        var color_code = id.split('').map(
             function(e,a,i) {
                 return Number(String(e.charCodeAt(0)) + '359359')
             }).reduce(function(a,b) {return a+b}) / 100.0 % 360;
-        var color = tinycolor({h:color_code, s:65, v:50}).toRgb();
+        color = tinycolor({h:color_code, s:65, v:50}).toRgb();
         color.r /= 255;
         color.g /= 255;
         color.b /= 255;
 
-        this.color = color;
-    };
-
-    this.setMarked = function(markVal) {
-        this.isMarked = markVal;
-    };
-
-    this.getMarked = function() {
-        return this.isMarked;
     };
 
 
-    this.createRoiTab = function() {
-        var thisId = 'roi_tab_' + this.id;
+    setMarked = function(markVal) {
+        isMarked = markVal;
+    };
+
+
+    getMarked = function() {
+        return isMarked;
+    };
+
+
+    createRoiTab = function() {
+        var thisId = 'roi_tab_' + id;
         var infoTab = $('#roi_tab_template').clone(true)
             .attr('id',thisId)
             .removeClass('hidden')
@@ -114,14 +147,19 @@ function roi(id) {
         return infoTab;
     };
 
+    getPoints = function() {
+        return points;
+    }
 
-    this.setPoints = function(gl,roiPoints) {
-        this.points = roiPoints;
-        this.type = 'polygons';
+    setPoints = function(gl, roiPoints) {
+        points = roiPoints;
+        type = 'polygons';
         for (var plane in roiPoints) {
 
-            this.segments[parseInt(plane)] = [];
-            for (var seg = 0; ((typeof(roiPoints[plane]) !== "undefined") && (seg < roiPoints[plane].length)); seg++) {
+            segments[parseInt(plane)] = [];
+            for (var seg = 0;
+                 ((typeof(roiPoints[plane]) !== "undefined") &&
+                   (seg < roiPoints[plane].length)); seg++) {
                 var segment = {}
                 segment.polyBuffer = gl.createBuffer();
                 segment.polyBuffer.points = [];
@@ -130,10 +168,11 @@ function roi(id) {
                 var tris = ec.vertices;
                 for (var i=0; i < tris.length; i++) {
                     if (i%2 == 0) {
-                        segment.polyBuffer.points.push(tris[i]*this.widthScale-this.widthConst)
+                        segment.polyBuffer.points.push(tris[i]*widthScale-widthConst)
                     } else {
                         segment.polyBuffer.points.push(
-                            g_frameViewer.mainProjectionHeight*(1/2-tris[i]/g_frameViewer.height));
+                            g_frameViewer.mainProjectionHeight*(
+                                1/2-tris[i]/g_frameViewer.height));
                         segment.polyBuffer.points.push(0);
                     }
                 }
@@ -141,98 +180,276 @@ function roi(id) {
                 segment.boundaryBuffer = gl.createBuffer();
                 segment.boundaryBuffer.points = [];
                 for (var i=0; i < roiPoints[plane][seg].length; i++) {
-                    segment.boundaryBuffer.points.push(roiPoints[plane][seg][i][0]*this.widthScale-this.widthConst)
                     segment.boundaryBuffer.points.push(
-                        g_frameViewer.mainProjectionHeight*(1/2-roiPoints[plane][seg][i][1]/g_frameViewer.height));
+                        roiPoints[plane][seg][i][0]*widthScale-widthConst)
+                    segment.boundaryBuffer.points.push(
+                        g_frameViewer.mainProjectionHeight *
+                        (1/2-roiPoints[plane][seg][i][1]/g_frameViewer.height));
                     segment.boundaryBuffer.points.push(0);
                 }
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, segment.boundaryBuffer);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(segment.boundaryBuffer.points), gl.STATIC_DRAW);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(
+                    segment.boundaryBuffer.points), gl.STATIC_DRAW);
                 segment.boundaryBuffer.itemSize = 3;
-                segment.boundaryBuffer.numItems = segment.boundaryBuffer.points.length/3;
+                segment.boundaryBuffer.numItems =
+                    segment.boundaryBuffer.points.length/3;
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, segment.polyBuffer);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(segment.polyBuffer.points), gl.STATIC_DRAW);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(
+                    segment.polyBuffer.points), gl.STATIC_DRAW);
                 segment.polyBuffer.itemSize = 3;
-                segment.polyBuffer.numItems = segment.polyBuffer.points.length/3;
+                segment.polyBuffer.numItems =
+                    segment.polyBuffer.points.length/3;
 
                 segment.indicesBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, segment.indicesBuffer);
-                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(ec.indices), gl.STATIC_DRAW);
+                gl.bufferData(
+                    gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(ec.indices),
+                    gl.STATIC_DRAW);
                 segment.indicesBuffer.itemSize = 1;
                 segment.indicesBuffer.numItems = ec.indices.length;
 
-                this.segments[parseInt(plane)].push(segment);
+                segments[parseInt(plane)].push(segment);
             }
         }
     };
 
-    this.addPoint = function(gl,plane,segment,point) {
-        if (typeof(this.points[plane]) === "undefined") {
-            this.points[plane] = [];
+    addPoint = function(gl,plane,segment,point) {
+        if (typeof(points[plane]) === "undefined") {
+            points[plane] = [];
         }
 
-        if (typeof(this.points[plane][segment]) === "undefined") {
-            this.points[plane][segment] = [];
+        if (typeof(points[plane][segment]) === "undefined") {
+            points[plane][segment] = [];
         }
 
-        this.points[plane][segment].push(point);
-        this.setPoints(gl,this.points);
+        points[plane][segment].push(point);
+        setPoints(gl, points);
     };
 
-    this.getSegments = function(plane) {
-        if (typeof this.segments[plane] == 'undefined') {
+    getSegments = function(plane) {
+        if (typeof segments[plane] == 'undefined') {
             return [];
         }
 
-        return this.segments[plane]
+        return segments[plane]
     };
 
-    this.setMask = function (projections) {
-        this.type = 'mask'
-        this.mask = projections
+    setMask = function (projections) {
+        type = 'mask'
+        mask = projections
     };
 
+    init(roi_id);
 
-    /*
-    this.setPointsBin = function(roiInfo) {
-        var roiObj = this;
-        var context =
-                $('<canvas width="'+roiInfo.length+'" height="1" style="display:none">',
-                    {'class':roiInfo.label+'_buffer',
-                     'id':'myId'})
-                        .appendTo('body')[0]
-                        .getContext("2d");
-        var buffer = new Image();
-        buffer.src = roiInfo.points
-        buffer.onload = function() {
-            context.drawImage(this,0,0);
-            var contextData = context.getImageData(0,0,roiInfo.length,1).data;
-            var count = 0;
-            for (var i=0; i < contextData.length; i+=8) {
-                var val = contextData[i]*256+contextData[i+4] + roiInfo.min_val
-                roiObj.points.push(val);
-                if (count%2 == 0) {
-                    roiObj.pointsGl.push(val*roiObj.widthScale-roiObj.widthConst)
-                } else {
-                    val = g_sequenceInfo.height-val;
-                    val *= g_frameViewer.mainProjectionHeight/g_sequenceInfo.height;
-                    val -= g_frameViewer.mainProjectionHeight/2;
-                    roiObj.pointsGl.push(val);
-                    roiObj.pointsGl.push(0.0);
-                }
-                count++;
-            }
-            roiContext.bindBuffer(roiContext.ARRAY_BUFFER, roiObj.glBuffer);
-            roiContext.bufferData(roiContext.ARRAY_BUFFER, new Float32Array(roiObj.pointsGl), roiContext.STATIC_DRAW);
-            roiObj.glBuffer.itemSize = 3;
-            roiObj.glBuffer.numItems = roiObj.pointsGl.length/3;
-            buffer = null;
-            $('.'+roiInfo.label+'_buffer').remove();
-            drawShapes(roiContext);
-        }
-    }*/
-
-    this.init();
+    return {
+        id: id,
+        setPoints: setPoints,
+        infoTab: infoTab,
+        addPoint: addPoint,
+        points: points,
+        getPoints: getPoints,
+        getSegments: getSegments,
+        isPointInRoi: isPointInRoi,
+        display: display,
+        color: color,
+        getMarked: getMarked,
+        setMarked: setMarked
+    }
 }
+
+diffPts = function(a, b) {
+    return [a[0]-b[0], a[1]-b[1]];
+}
+
+angle = function(pt) {
+    if (pt[1] === 0) {
+        if (pt[0] > 0) {
+            theta = Math.PI/2;
+        } else {
+            theta = 3*Math.PI/2;
+        }
+    } else if (pt[0] == 0) {
+        if (pt[1] > 0) {
+            theta = 0;
+        } else {
+            theta = Math.PI;
+        }
+    } else {
+        theta = Math.atan(pt[0]/pt[1])
+    }
+
+    theta = Math.abs(theta);
+    if ((pt[1] < 0) && (pt[0] < 0)) {
+        theta = Math.PI + theta
+    } else if ((pt[1] < 0) && (pt[0] > 0)) {
+        theta = Math.PI - theta;
+    } else if ((pt[1] > 0) && (pt[0] < 0 )) {
+        theta = 2*Math.PI - theta;
+    }
+
+    return theta
+}
+
+distance = function(a, b) {
+    return Math.sqrt(Math.pow((a[0]-b[0]),2) + Math.pow((a[1]-b[1]), 2));
+}
+
+Roi2 = function(id) {
+
+    // field declaration
+    var roi,
+        linear_points,
+        radius,
+        radiuses,
+        min_distance,
+        points;
+
+    // method declarations
+    var init,
+        addPoint;
+
+    init = function(roi_id) {
+        roi = new Roi2(roi_id);
+        linear_points = [];
+        points = [];
+        radiuses = [];
+        radius = 1;
+        min_distance = radius;
+    }
+
+    getPoints = function() {
+        return points;
+    }
+
+    setRadius = function(gl, plane, segment, new_radius) {
+        radiuses[radiuses.length-1] = new_radius;
+        radius = new_radius;
+        if (plane == -1) {
+            linear_points.map(function(e, i) {
+                addPoint(gl, i, segment);
+            });
+        } else {
+            addPoint(gl, plane, segment);
+        }
+    }
+
+    addPoint = function(gl,plane,segment,point) {
+        if (typeof(point) !== "undefined") {
+            if (typeof(linear_points[plane]) === "undefined") {
+                linear_points[plane] = [];
+            }
+
+            if (typeof(linear_points[plane][segment]) === "undefined") {
+                linear_points[plane][segment] = [];
+            }
+
+            if (linear_points[plane][segment].length > 0) {
+                if (distance(point, linear_points[plane][segment].slice(-1)[0]) < min_distance) {
+                    return;
+                }
+            }
+
+            linear_points[plane][segment].push(point);
+            radiuses.push(radius);
+        }
+
+        var planes_left = [];
+        /*
+        linear_points.forEach(function(plane) {
+            var segments_left = []
+            plane.forEach(function(segment) {
+                if (segment.length < 2) {
+                    segments_left.push(segment);
+                } else {
+                    var points_left = [];
+                    var points_right = [];
+                    segment.forEach(function(point, index, array) {
+       */
+        var segments_left = []
+        var points_left = [];
+        var points_right = [];
+        var segment = linear_points[plane][segment];
+        if (segment.length >= 2) {
+            segment.forEach(function(point, index, array) {
+                radius = radiuses[index];
+                        if (index === 0) {
+                            var next = array[1];
+                            next = diffPts(next, point);
+
+                            theta3 = angle(next);
+
+                            points_right.push(
+                                [point[0]-radius*Math.cos(theta3),
+                                point[1]+radius*Math.sin(theta3)]);
+                            points_left.push(
+                                [point[0]+radius*Math.cos(theta3),
+                                point[1]-radius*Math.sin(theta3)]);
+
+                        } else if (index == array.length-1) {
+                            var prev = array[index-1];
+                            prev = diffPts(prev, point);
+                            theta3 = angle(prev);
+
+                            points_right.push(
+                                [point[0]+radius*Math.cos(theta3),
+                                point[1]-radius*Math.sin(theta3)]);
+                            points_left.push(
+                                [point[0]-radius*Math.cos(theta3),
+                                point[1]+radius*Math.sin(theta3)]);
+                        } else {
+                            var prev = array[index-1];
+                            prev = diffPts(prev, point);
+                            theta1 = angle(prev);
+
+                            var next = array[index+1];
+                            next = diffPts(next, point);
+                            theta2 = angle(next);
+
+                            theta3 = (theta2 + theta1)/2;
+
+                            var h = Math.abs(radius/Math.sin(theta1 - theta3));
+                            if (theta1 < theta2) {
+                                theta3 += Math.PI;
+                            }
+                            points_right.push(
+                                [point[0]-h*Math.sin(theta3),
+                                point[1]-h*Math.cos(theta3)]);
+
+                                points_left.push(
+                                    [point[0]+h*Math.sin(theta3),
+                                    point[1]+h*Math.cos(theta3)]);
+                        }
+                    });
+                    segments_left.push(points_left.concat(points_right.reverse()));
+                } else {
+                    segments_left.push(segment);
+                }
+            //});
+            planes_left.push(segments_left);
+        //});
+        roi.points = planes_left;
+        roi.setPoints(gl, planes_left);
+        points = planes_left;
+    };
+
+
+    init(id);
+
+    return {
+        id: roi.id,
+        setPoints: roi.setPoints,
+        infoTab: roi.infoTab,
+        addPoint: addPoint,
+        getSegments: roi.getSegments,
+        isPointInRoi: roi.isPointInRoi,
+        display: roi.display,
+        color: roi.color,
+        getMarked: roi.getMarked,
+        setMarked: roi.setMarked,
+        getPoints: getPoints,
+        setRadius: setRadius
+    }
+}
+

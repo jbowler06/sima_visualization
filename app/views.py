@@ -13,6 +13,8 @@ import time
 import numpy.ma as ma
 import json
 from shapely.geometry.point import Point
+import urllib
+from skimage import img_as_ubyte
 
 from flask import render_template
 from flask import request
@@ -26,6 +28,10 @@ from sima.segment import SmoothROIBoundaries
 
 from PIL import Image
 import StringIO
+
+import lab.classes.sima_sequences as sima_sequences
+
+import frame_loader
 
 def convertToBin(arr):
     min_val = np.min(arr)
@@ -87,24 +93,19 @@ def getInfo():
         seq = ds.__iter__().next()
     else:
         try:
-            seq = Sequence.create('HDF5', ds_path, 'tzyxc')
+            seq = Sequence.create('HDF5', ds_path, 'tzyxc', key='imaging')
         except IOError:
             return jsonify(error='dataset not found')
 
-    length = len(seq)
-    norm_factors = {}
-    for channel in xrange(seq.shape[4]):
-        norm_factors['channel_' + str(channel)] = []
+    length = seq.shape[0]
 
-    for frame_index in [0, int(length/2), -1]:
-        frame = seq._get_frame(frame_index)
-        for channel in xrange(seq.shape[4]):
-            subframe = frame[:, :, :, channel]
-            if np.any(np.isfinite(subframe)):
-                factor = np.percentile(
-                    subframe[np.where(np.isfinite(subframe))], 98)
-                if np.isfinite(factor):
-                    norm_factors['channel_'+str(channel)] += [factor]
+    norming_vals = []
+    for c in xrange(seq.shape[4]):
+        norming_vals.append(np.array(
+            map(lambda f: (np.nanpercentile(seq._get_frame(f)[..., c], 2),
+                           np.nanpercentile(seq._get_frame(f)[..., c], 98)),
+                [0, length//2, -1])))
+    norming_vals = np.nanmean(norming_vals, axis=1)
 
     json = {
         'planes': range(int(seq.shape[1]+1)),
@@ -112,17 +113,16 @@ def getInfo():
         'width': int(seq.shape[3]),
         'length': length
     }
-
-    for channel in norm_factors.keys():
-        json[channel] = int(max(1,int(np.nanmean(norm_factors[channel]))))
+    for channel in xrange(seq.shape[4]):
+        json['channel_%s' % str(channel)] = \
+            list(norming_vals[channel].astype(int))
 
     return jsonify(**json)
 
 
-@app.route('/getChannels/<directory>')
-def getChannels(directory):
-    ds_path = directory.replace(':!', '/')
-
+@app.route('/getChannels', methods=['GET', 'POST'])
+def getChannels():
+    ds_path = request.args.get('directory')
     if (os.path.splitext(ds_path)[-1] == '.sima'):
         try:
             ds = ImagingDataset.load(ds_path)
@@ -131,7 +131,7 @@ def getChannels(directory):
         channels = ds.channel_names
     else:
         try:
-            seq = Sequence.create('HDF5', ds_path, 'tzyxc')
+            seq = Sequence.create('HDF5', ds_path, 'tzyxc', key='imaging')
         except IOError:
             return ''
         channels = ['channel_' + str(idx) for idx in range(seq.shape[4])]
@@ -141,9 +141,9 @@ def getChannels(directory):
     return render_template('select_list.html', options=channels)
 
 
-@app.route('/getCycles/<directory>')
-def getCycles(directory):
-    ds_path = directory.replace(':!', '/')
+@app.route('/getCycles', methods=['GET', 'POST'])
+def getCycles():
+    ds_path = request.args.get('directory')
 
     if (os.path.splitext(ds_path)[-1] == '.sima'):
         try:
@@ -385,8 +385,8 @@ def getRoi():
 @app.route('/getFrames', methods=['GET','POST'])
 def getFrames():
     ds_path = request.form.get('path')
-    requestFrames = request.form.getlist('frames[]', type=int)
-    normingVal = request.form.getlist('normingVal[]', type=float)
+    request_frames = request.form.getlist('frames[]', type=int)
+    normingVal = json.loads(request.form.get('normingVal'))
     sequenceId = request.form.get('sequenceId')
     channel = request.form.get('channel')
     planes = request.form.getlist('planes[]', type=int)
@@ -405,41 +405,85 @@ def getFrames():
         seq = ds.sequences[cycle]
         channel = ds._resolve_channel(channel)
     else:
-        seq = Sequence.create('HDF5', ds_path, 'tzyxc')
+        seq = Sequence.create('HDF5', ds_path, 'tzyxc', key='imaging')
         if channel:
             channel = int(channel.split('_')[-1])
 
+    if len(planes) > 1:
+        load_frames = frame_loader.load_frames_multiplane
+    else:
+        load_frames = frame_loader.load_frames
+        planes = planes[0]
+
     end = False
     frames = {}
-    for frame_number in requestFrames:
-        norming_val = normingVal[:]
+    lut_cutoffs = np.array(normingVal[:]).astype(float)[channel]
+    frames = {'frame_%s' % idx: {} for idx in request_frames}
+    if -1 in request_frames and ds is not None:
+        request_frames.remove(-1)
+        try:
+            with open(os.path.join(ds.savedir, 'time_averages.pkl')) as f:
+                time_averages = pickle.load(f)
+            if not isinstance(time_averages, np.ndarray):
+                raise Exception('no time average')
+        except:
+            time_averages = seq._get_frame(0)
+            ta_luts = lut_cutoffs
+        else:
+            ta_luts = np.vstack((
+               [np.nanpercentile(f, 2) for f in
+                np.rollaxis(ds.time_averages, -1, 0)],
+               [np.nanpercentile(f, 99) for f in
+                np.rollaxis(ds.time_averages, -1, 0)])).T
+            ta_luts = ta_luts[channel]
+
+        load_frames(np.expand_dims(time_averages, 0), [-1], ta_luts,
+                                   planes, channel, quality, frames)
+
+    request_frames = filter(lambda i: 0 <= i <= seq.shape[0], request_frames)
+    if not len(request_frames):
+        return jsonify(end=end, sequenceId=sequenceId, **frames)
+
+    seq = sima_sequences._SplicedSequence(seq, request_frames)
+
+    load_frames(seq, request_frames, lut_cutoffs, planes, channel, quality,
+                frames)
+
+    return jsonify(end=end, sequenceId=sequenceId, **frames)
+
+
+def deleteme():
+    for frame_number in request_frames:
         if frame_number > len(seq)-1 or frame_number < -1:
             end = True
             continue
+
         elif frame_number == -1 and ds is not None:
             try:
-                time_averages = pickle.load(open(os.path.join(ds.savedir, 'time_averages.pkl')))
-                if not isinstance(time_averages,np.ndarray):
+                time_averages = pickle.load(
+                    open(os.path.join(ds.savedir, 'time_averages.pkl')))
+                if not isinstance(time_averages, np.ndarray):
                     raise Exception('no time average')
             except:
                 vol = seq._get_frame(0)
             else:
                 vol = ds.time_averages
-                for ch in xrange(vol.shape[3]):
-                    subframe = vol[:, :, :, ch]
-                    factor = np.percentile(
-                        subframe[np.where(np.isfinite(subframe))], 99)
-                    if np.isfinite(factor):
-                        norming_val[ch] = factor
+                norming_val = np.vstack((
+                   [np.nanpercentile(f, 2) for f in
+                    np.rollaxis(ds.time_averages, -1, 0)],
+                   [np.nanpercentile(f, 99) for f in
+                    np.rollaxis(ds.time_averages, -1, 0)])).T
         else:
             vol = seq._get_frame(frame_number)
 
         if channel is not None:
-            vol = vol[:, :, :, channel]
-            vol /= ((norming_val[channel])/255)
+            norming_val = norming_val[channel]
+            vol = vol[:, :, :, channel]-norming_val[0]
+            vol = vol/((norming_val[1]-norming_val[0])/255.0)
             vol = np.clip(vol, 0, 255)
         else:
-            vol = np.hstack((vol[:,:,:,0]/norming_val[0],vol[:,:,:,1]/norming_val[1]))
+            vol = np.hstack(((vol[:,:,:,0]-norming_val[0][0])/(norming_val[0][1]-norming_val[0][0]),
+                             (vol[:,:,:,1]-norming_val[1][0])/(norming_val[1][1]-norming_val[1][0])))
             vol*=255
         frames['frame_'+str(frame_number)] = {};
 
@@ -626,9 +670,9 @@ def simplifyRoi():
     return jsonify({roi_id: {'points': convertedRoi}})
 
 
-@app.route('/getFolders/<directory>')
-def getFolders(directory):
-    directory = directory.replace(':!', '/')
+@app.route('/getFolders')
+def getFolders():
+    directory = request.args.get('directory')
     subfolders = [
         os.path.basename(fname) for fname in glob.glob(
             os.path.join(directory, '*')) if os.path.isdir(fname) or
