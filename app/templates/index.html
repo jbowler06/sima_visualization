@@ -1061,7 +1061,7 @@
 
                 var inst = Instruction();
                 inst.init(
-                    {   url: '{{ url_for(".getFrames", _external=True) }}',
+                    {   url: '{{ url_for(".getFrames") }}',
                         type: 'POST',
                         data: {
                             frames: frames,
@@ -1111,7 +1111,7 @@
 
 
 //                $.ajax({
-//                    url: '{{ url_for('.getFrames', _external=True) }}',
+//                    url: '{{ url_for('.getFrames') }}',
 //                    type: 'POST',
 //                    data: {
 //                        frames: frames,
@@ -1184,7 +1184,7 @@
                 var inst = Instruction();
                 inst.init(
                     {
-                        url: '{{ url_for(".saveImage", _external=True) }}',
+                        url: '{{ url_for(".saveImage") }}',
                         type: 'POST',
                         cache: false,
                         data: {
@@ -1196,7 +1196,7 @@
                 );
                 ajaxManager.addRequest(inst, false);
 //                $.ajax({
-//                    url: '{{ url_for(".saveImage", _external=True) }}',
+//                    url: '{{ url_for(".saveImage") }}',
 //                    type: 'POST',
 //                    cache: false,
 //                    data: {
@@ -1256,7 +1256,7 @@
         var inst = Instruction();
         inst.init(
             {
-                url: '{{ url_for(".getLabels", _external=True) }}',
+                url: '{{ url_for(".getLabels") }}',
                 type: 'POST',
                 data: {
                     path: filepath
@@ -1276,7 +1276,7 @@
         ajaxManager.addRequest(inst, false);
 
 //        $.ajax({
-//            url: '{{ url_for('.getLabels', _external=True) }}',
+//            url: '{{ url_for('.getLabels') }}',
 //            type: 'POST',
 //            data: {
 //                path: filepath
@@ -1300,7 +1300,7 @@
 
     function fetchInfo(filePath) {
         $.ajax({
-            url: '{{ url_for('.getInfo', _external=True) }}',
+            url: '{{ url_for('.getInfo') }}',
             type: 'POST',
             cache: false,
             data: {
@@ -1398,7 +1398,7 @@
             $('#buffering_warning').text('buffering.. please wait')
         }
 
-        var newUrl = '{{ url_for('.index',_external=True) }}?dataset=' + encodeURIComponent(g_filePath) +
+        var newUrl = '{{ url_for('.index') }}?dataset=' + encodeURIComponent(g_filePath) +
         '&channel=' + encodeURIComponent(g_frameViewer.channel) +
         '&cycle=' + encodeURIComponent(g_frameViewer.cycle) +
         '&cutoff1=' + encodeURIComponent(g_normingVal[0]) +
@@ -1440,7 +1440,7 @@
         if (fullPath.slice(-5) == '.sima') {
             $('#cycle_select_container').removeClass('hidden');
             $('#cycle_select').prop('disabled',true)
-            $.get("{{ url_for('.getCycles', directory='', _external=True)}}" +
+            $.get("{{ url_for('.getCycles', directory='')}}" +
                   encodeURIComponent(fullPath), function(html) {
                 var cycleSelect = $('#cycle_select');
                 cycleSelect.html('');
@@ -1458,7 +1458,7 @@
         if ((fullPath.slice(-5) == '.sima') || (fullPath.slice(-2) == 'h5')) {
             $('#file_select').html('')
             $('#channel_select').prop('disabled',true)
-            $.get("{{ url_for('.getChannels', directory='',_external=True)}}" +
+            $.get("{{ url_for('.getChannels', directory='')}}" +
                   encodeURIComponent(fullPath), function(html) {
                 var channelSelect = $('#channel_select');
                 channelSelect.html('');
@@ -1619,7 +1619,7 @@
     function _load_roi(roi_id, color, info_tab) {
 
         $.ajax({
-            url: '{{ url_for('.getRoi', _external=True) }}',
+            url: '{{ url_for('.getRoi') }}',
             type: 'POST',
             cache: false,
             data: {
@@ -1672,7 +1672,7 @@
         var inst = Instruction();
         inst.init(
             {
-                url: '{{ url_for(".getRois", _external=True) }}',
+                url: '{{ url_for(".getRois") }}',
                 type: 'POST',
                 cache: false,
                 data: {
@@ -1739,14 +1739,14 @@
 //        //    var type = 'projections';
 //        //}
 //
-//        //var url = '{{ url_for('.getRoiMasks', _external=True) }}';
+//        //var url = '{{ url_for('.getRoiMasks') }}';
 //        //var colorMode = 1;
 //        //if (label.match('^ica.*\.npz$|^opca.*\.npz')) {
-//        //    var url = '{{ url_for('.getComponents', _external=True) }}';
+//        //    var url = '{{ url_for('.getComponents') }}';
 //        //    colorMode = 0;
 //        //}
 //        //if (type == 'polygons') {
-//        var url = '{{ url_for('.getRois', _external=True) }}';
+//        var url = '{{ url_for('.getRois') }}';
 //        //}
 //
 //        $.ajax({
@@ -1864,7 +1864,7 @@
                 .map(Number.call, Number)
                 .map(function(e) {return (e+index);});
             $.ajax({
-                url: "{{ url_for('.getFrames', _external=True) }}",
+                url: "{{ url_for('.getFrames') }}",
                 type: 'POST',
                 cache: false,
                 data: {
@@ -1927,7 +1927,7 @@
 
         $('#volume_button').addClass('loading');
         $.ajax({
-            url: '{{ url_for('.getFrames', _external=True) }}',
+            url: '{{ url_for('.getFrames') }}',
             type: 'POST',
             cache: false,
             data: {
@@ -2021,7 +2021,7 @@
         $('#label_select').val(newLabel).change();
         $('#label_select option').remove();
         $.ajax({
-            url: '{{ url_for('.setRoiLabel', _external=True) }}',
+            url: '{{ url_for('.setRoiLabel') }}',
             type: 'POST',
             data: {
                 path: g_filePath,
@@ -2073,7 +2073,7 @@
         $('#label_select').val('').change();
 
         $.ajax({
-            url: '{{ url_for('.deleteRoiSet', _external=True) }}',
+            url: '{{ url_for('.deleteRoiSet') }}',
             type: 'POST',
             cache: false,
             data: {
@@ -2110,7 +2110,7 @@
         var inst = Instruction();
         inst.init(
             {
-                url: '{{ url_for(".updateRoi", _external=True) }}',
+                url: '{{ url_for(".updateRoi") }}',
                 type: 'POST',
                 cache: false,
                 data: {
@@ -2131,7 +2131,7 @@
         ajaxManager.addRequest(inst, true);
 //
 //        $.ajax({
-//            url: '{{ url_for(".updateRoi", _external=True) }}',
+//            url: '{{ url_for(".updateRoi") }}',
 //            type: 'POST',
 //            cache: false,
 //            data: {
@@ -2309,7 +2309,7 @@
             'select': function(b) {
                 var roi = g_roiEditor.rois[0];
                 $.ajax({
-                    url: '{{ url_for('.simplifyRoi', _external=True) }}',
+                    url: '{{ url_for('.simplifyRoi') }}',
                     type: 'POST',
                     cache: false,
                     data: {
@@ -2459,7 +2459,7 @@
                 }
 
                 $.ajax({
-                    url: '{{ url_for('.deleteRoi', _external=True) }}',
+                    url: '{{ url_for('.deleteRoi') }}',
                     type: 'POST',
                     cache: false,
                     data: {
