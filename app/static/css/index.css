@@ -214,6 +214,7 @@ input.norming_value_input{
 
     border: thin solid #0F0;
     top: 100px;
+    z-index: 1000;
 }
 
 #roi_control_container.selected {
@@ -354,6 +355,14 @@ input.norming_value_input{
 
 #drawing_controls u {
     color: #692;
+}
+
+.roiIdLabel {
+    width: max-content;
+    height: max-content;
+    background-color: #000;
+    cursor: default;
+    font-size: 12pt;
 }
 
 .editablePoint {

@@ -243,6 +243,18 @@
                                 colspan="2"
                                 id="delete_roi_label_button">delete roi list</td>
                     </tr>
+                    <tr>
+                        <td
+                                class="tableButton handleButtonClick labelRoisButton"
+                                colspan="2"
+                                id="label_rois_button">label rois</td>
+                    </tr>
+                    <tr>
+                        <td
+                                class="tableButton handleButtonClick labelRoisButton"
+                                colspan="2"
+                                id="multilist_rois_button">multiple list loading</td>
+                    </tr>
                     <!--tr>
                         <td
                             class="tableButton roiLoadButton"
@@ -427,6 +439,9 @@
     <div class="canvasContainer">
         <div class="editablePoint hidden" id="editable_point_template">
             <div class="editableImageContainer"></div>
+        </div>
+        <div class="editablePoint hidden" id="roi_label_template">
+            <div class="roiIdLabel"></div>
         </div>
         <canvas class="webGlCanvas" id="gl_canvas" width="800" height="700"></canvas>
         <canvas class="webGlCanvas" id="roi_canvas" width="800" height="700"></canvas>
@@ -685,7 +700,7 @@
     var g_frameViewer;
     var g_roiViewer;
     var g_roiEditor;
-    var numRois = 0;
+    //var numRois = 0;
 
     var ajaxManager = AjaxManager();
     ajaxManager.init();
@@ -1657,10 +1672,12 @@
 
     function _load_rois() {
 
-        g_roiViewer.clear();
+        if (!$('#multilist_rois_button').hasClass('selected')) {
+            g_roiViewer.clear();
+        }
+
         g_roiEditor.clear();
 
-        numRois = 0; // reset the number of ROIs to 0.
 
         const label = $('#label_select').val();
         if (label === '') {
@@ -1684,13 +1701,13 @@
             // on done
             function(response) {
                 //   if (type == "polygons") {
-                g_roiViewer.gl.rois = [];
+                //g_roiViewer.gl.rois = [];
                 var roiLabels = Object.keys(response);
                 if (roiLabels.length != 0) {
                     g_roiViewer.storePolygonRoi(response, roiLabels, 0);
                 }
 
-                numRois = g_roiViewer.getRois().length;
+                //numRois = g_roiViewer.getRois().length;
             },
 
             // on fail
@@ -2105,6 +2122,28 @@
             .css('top',top);
     }
 
+
+    function _add_roi_label(left, top, id, label, color) {
+        if ((!left) || (!top) ||
+            (left >= g_frameViewer.glContext.viewportWidth) ||
+            (top >= g_frameViewer.glContext.viewportHeight)) {
+            return;
+        }
+
+        var color_string = 'rgb(' + color.r*255 + ', ' + color.b*255 + ', ' + color.g*255 + ')';
+        var label_div = $('#roi_label_template').clone(true)
+            .removeClass('hidden')
+            .attr('id',id)
+            .appendTo('.canvasContainer')
+            .addClass('active')
+            .css('left',left)
+            .css('top',top)
+            .css('color', color_string);
+       label_div.find('.roiIdLabel').html(label)
+       return label_div;
+    }
+
+
     function _update_roi(roi) {
 
         var inst = Instruction();
@@ -2356,6 +2395,81 @@
             }
         },
 
+        'multilist_rois_button': {
+            'deselect': function() {
+                $('#label_select').val('').change();
+            },
+            'select': function() { }
+        },
+        'label_rois_button': {
+            'deselect': function() {
+                $('.editablePoint.active').remove();
+                g_frameViewer.zoomHook = function() { };
+                g_frameViewer.dragHook = function() { };
+            },
+            'select': function() {
+                g_frameViewer.zoomHook = function() {
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                };
+                g_frameViewer.dragHook = function() {
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                };
+
+
+                var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
+                g_roiViewer.rois.map(function(roi, idx) {
+
+                    roi.getPoints().map(function(plane) {
+                        plane.map(function(points) {
+
+                    var point = points.reduce(function(x, pt, idx) {
+                        return [(x[0]*idx + pt[0])/(idx+1),
+                                (x[1]*idx + pt[1])/(idx + 1)]}, [0, 0]);
+
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startX,
+                        point[0]/g_frameViewer.width);
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startY,
+                        1-point[1]/g_frameViewer.height);
+                    drawColorMap(positioningContext, 0);
+
+                    var canvas = $('#positioning_canvas');
+                    var height = canvas.height();
+                    var width = canvas.width();
+                    var pixelValues = new Uint8Array(height*width*4);
+                    positioningContext.readPixels(0, 0, width, height,
+                        positioningContext.RGBA, positioningContext.UNSIGNED_BYTE,
+                        pixelValues);
+
+                    var i = 0;
+                    for (; i < pixelValues.length; i+=4) {
+                        if (pixelValues[i] != 0) break;
+                    }
+
+                    var roiIdLabel = roi.id + "<br/>" + roi.label
+                    _add_roi_label(
+                        (i/4)%width, height-Math.floor(i/4/width),
+                        ('vert_' + idx), roiIdLabel, roi.color)
+
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startX, 0);
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startY, 0);
+                    drawColorMap(positioningContext, 0);
+
+                    });
+                    });
+                });
+            }
+        },
+
         'edit_roi_button': {
             'deselect': function() {
                 $('.editablePoint.active').remove();
@@ -2541,8 +2655,7 @@
             },
             'select': function(b) {
                 $('#draw_roi_button').addClass('selected');
-                g_roiEditor.rois[0].points = [];
-                g_roiEditor.rois[0].segments = [];
+                g_roiEditor.rois[0].setPoints(g_roiEditor.gl, [ [] ]);
                 g_roiEditor.render();
 
                 ButtonClickEvents.draw_roi_button.select();
@@ -2609,16 +2722,23 @@
         },
 
         'drawRoi': function(x, y, e) {
+            if ((typeof(x) === 'undefined') || (typeof(y) === 'undefined')) {
+                return;
+            }
+
             if (g_frameViewer.getCurrentPlane() == 0) {
-                for (plane_idx = 0; plane_idx < g_frameViewer.numPlanes(); plane_idx++) {
+                for (plane_idx = 0;
+                     plane_idx < g_frameViewer.numPlanes();
+                     plane_idx++) {
                     g_roiEditor.rois[0].addPoint(
                         g_roiEditor.gl,plane_idx,0,[x,y]);
                 }
             } else {
-                console.log(g_roiEditor.rois[0]);
+                //console.log(g_roiEditor.rois[0]);
 
                 g_roiEditor.rois[0].addPoint(
-                    g_roiEditor.gl,g_frameViewer.getCurrentPlane()-1,0,[x,y]);
+                    g_roiEditor.gl, g_frameViewer.getCurrentPlane()-1, 0,
+                    [x,y]);
             }
 
             g_roiEditor.render();
@@ -2738,6 +2858,9 @@
                     g_roiEditor.rois[0].setRadius(g_roiEditor.gl,plane,0,10);
                     g_roiEditor.render();
                 }
+            } else if (e.keyCode == 221) {
+                _handle_button_click({'target':
+                    document.getElementById('label_rois_button')});
             }
         },
 
@@ -2794,6 +2917,7 @@
     }
 
     $(document).keydown(function(e) {
+
         if ($('input').is(':focus')) return;
 
         if (e.metaKey) return;
@@ -2836,7 +2960,7 @@
 
     // when ROIs are loaded on the canvas, a double click can select ROIs
     $('#roi_editing_canvas').dblclick(function(e) {
-        if (numRois > 0) {
+        if (g_roiViewer.rois.length > 0) {
 
             drawColorMap(positioningContext, 0);
             var parentOffset = $(this).parent().offset();

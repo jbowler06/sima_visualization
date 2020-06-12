@@ -2,7 +2,11 @@ import numpy as np
 from  skimage import img_as_ubyte as skimage_img_as_ubyte
 from PIL import Image
 import base64
-import StringIO
+
+try:
+    import StringIO
+except:
+    import io as StringIO
 import warnings
 
 
@@ -19,7 +23,7 @@ def convertToB64Jpeg(arr, quality=100):
     img.save(img_io, 'jpeg', quality=quality)
     img_io.seek(0)
 
-    return 'data:image/jpeg;base64,'+base64.b64encode(img_io.read())
+    return 'data:image/jpeg;base64,' + str(base64.b64encode(img_io.read()))
 
 
 def load_frames_zprojection(seq, frame_idxs, lut_cutoffs, channel,

@@ -4,7 +4,10 @@ import numpy as np
 
 import os.path
 import glob
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except:
+    import pickle
 import base64
 import matplotlib
 import matplotlib.cm
@@ -27,11 +30,14 @@ from sima.ROI import ROI
 from sima.segment import SmoothROIBoundaries
 
 from PIL import Image
-import StringIO
+try:
+    import StringIO
+except:
+    import io as StringIO
 
 import lab.classes.sima_sequences as sima_sequences
 
-import frame_loader
+import app.frame_loader as frame_loader
 
 def convertToBin(arr):
     min_val = np.min(arr)
@@ -90,7 +96,7 @@ def getInfo():
         except IOError:
             return jsonify(error='dataset not found')
 
-        seq = ds.__iter__().next()
+        seq = ds.sequences[0]
     else:
         try:
             seq = Sequence.create('HDF5', ds_path, 'tzyxc', key='imaging')
@@ -100,24 +106,24 @@ def getInfo():
     length = seq.shape[0]
 
     norming_vals = []
-    for c in xrange(seq.shape[4]):
+    for c in range(seq.shape[4]):
         norming_vals.append(np.array(
-            map(lambda f: (np.nanpercentile(seq._get_frame(f)[..., c], 2),
+            list(map(lambda f: (np.nanpercentile(seq._get_frame(f)[..., c], 2),
                            np.nanpercentile(seq._get_frame(f)[..., c], 98)),
-                [0, length//2, -1])))
-    norming_vals = np.nanmean(norming_vals, axis=1)
+                [0, length//2, -1]))))
+    norming_vals = np.nanmean(norming_vals, axis=1).astype(int)
 
-    json = {
-        'planes': range(int(seq.shape[1]+1)),
+    _json = {
+        'planes': list(range(int(seq.shape[1]+1))),
         'height': int(seq.shape[2]),
         'width': int(seq.shape[3]),
         'length': length
     }
-    for channel in xrange(seq.shape[4]):
-        json['channel_%s' % str(channel)] = \
-            list(norming_vals[channel].astype(int))
+    for channel in range(seq.shape[4]):
+        _json['channel_%s' % str(channel)] = \
+            list(norming_vals[channel].astype(float))
 
-    return jsonify(**json)
+    return jsonify(**_json)
 
 
 @app.route('/getChannels', methods=['GET', 'POST'])
@@ -198,7 +204,7 @@ def getComponents():
         components = np.load(os.path.join(ds_path, label))['oPCs']
 
     projectedRois = {}
-    for i in xrange(components.shape[3]):
+    for i in range(components.shape[3]):
         vol = components[:, :, :, i]
         cutoff = np.percentile(vol[np.where(np.isfinite(vol))], 25)
         vol -= cutoff
@@ -321,10 +327,10 @@ def getRois():
 
         roi_points = []
         try:
-            for i in xrange(dataset.frame_shape[0]):
+            for i in range(dataset.frame_shape[0]):
                 roi_points.append([])
         except:
-            for i in xrange(np.max(np.array(roi.coords)[:, :, 2])):
+            for i in range(np.max(np.array(roi.coords)[:, :, 2])):
                 roi_points.append([])
         for poly in roi.polygons:
             coords = np.array(poly.exterior.coords)
@@ -361,10 +367,10 @@ def getRoi():
 
     roi_points = []
     try:
-        for i in xrange(roi.im_shape[0]):
+        for i in range(roi.im_shape[0]):
             roi_points.append([])
     except:
-        for i in xrange(np.max(np.array(roi.coords)[:,:,2])):
+        for i in range(np.max(np.array(roi.coords)[:,:,2])):
             roi_points.append([])
     for poly in roi.polygons:
         coords = np.array(poly.exterior.coords)
@@ -417,7 +423,7 @@ def getFrames():
 
     end = False
     frames = {}
-    lut_cutoffs = np.array(normingVal[:]).astype(float)[channel]
+    lut_cutoffs = np.array(normingVal[:])[channel].astype(float)
     frames = {'frame_%s' % idx: {} for idx in request_frames}
     if -1 in request_frames and ds is not None:
         request_frames.remove(-1)
@@ -440,7 +446,7 @@ def getFrames():
         load_frames(np.expand_dims(time_averages, 0), [-1], ta_luts,
                                    planes, channel, quality, frames)
 
-    request_frames = filter(lambda i: 0 <= i <= seq.shape[0], request_frames)
+    request_frames = list(filter(lambda i: 0 <= i <= seq.shape[0], request_frames))
     if not len(request_frames):
         return jsonify(end=end, sequenceId=sequenceId, **frames)
 
@@ -448,7 +454,6 @@ def getFrames():
 
     load_frames(seq, request_frames, lut_cutoffs, planes, channel, quality,
                 frames)
-
     return jsonify(end=end, sequenceId=sequenceId, **frames)
 
 
@@ -656,10 +661,10 @@ def simplifyRoi():
 
     convertedRoi = []
     try:
-        for i in xrange(roi.im_shape[0]):
+        for i in range(roi.im_shape[0]):
             convertedRoi.append([])
     except:
-        for i in xrange(np.max(np.array(roi.coords)[:, :, 2])):
+        for i in range(np.max(np.array(roi.coords)[:, :, 2])):
             convertedRoi.append([])
     for poly in roi.polygons:
         coords = np.array(poly.exterior.coords)

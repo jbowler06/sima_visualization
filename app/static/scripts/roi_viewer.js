@@ -87,7 +87,7 @@ function ROIViewer(canvas, frameViewer, slider) {
         newRoi.setPoints(this.gl,response[roiLabels[i]].points);
         newRoi.polys = response[roiLabels[i]].polygons;
         newRoi.bboxes = response[roiLabels[i]].bboxes;
-        this.rois[i] = newRoi;
+        this.rois[this.rois.length] = newRoi;
 
         $('#roi_control_heading roiPolygonsButton').addClass('on');
         if (i < roiLabels.length -1) {
