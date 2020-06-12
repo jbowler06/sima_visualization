@@ -360,9 +360,10 @@ input.norming_value_input{
 .roiIdLabel {
     width: max-content;
     height: max-content;
-    background-color: #000;
+    background-color: rgba(0, 0, 0, 0.5);
     cursor: default;
     font-size: 12pt;
+    border-radius: 3px;
 }
 
 .editablePoint {
