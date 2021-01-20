@@ -4,6 +4,7 @@ function FrameViewer(gl) {
     this.frameDelay = 166.66;
     this.dragScale = 400;
     this.allowDrag = true;
+    this.allowZoom = true;
     this.current = 0;
 
     this.zoomLevel = -3.5;
@@ -18,6 +19,8 @@ function FrameViewer(gl) {
     this.roiViewers = [];
     this.nChannels = 1;
     this.frame_avg = 1;
+    this.zoomHook = function() { };
+    this.dragHook = function() { };
 
     this.length = 0;
 
@@ -99,24 +102,29 @@ function FrameViewer(gl) {
         var play = this.playing;
         var thisViewer = this;
         gl_canvas.bind('DOMMouseScroll mousewheel', function(event) {
-            if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
-                if ($('#volume_button').hasClass('selected')) {
-                    thisViewer.setCurrentPlane(thisViewer.getCurrentPlane()+1);
+            if (thisViewer.allowZoom) {
+                if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
+                    if ($('#volume_button').hasClass('selected')) {
+                        thisViewer.setCurrentPlane(thisViewer.getCurrentPlane()+1);
+                    } else {
+                        thisViewer.zoomLevel = Math.min(thisViewer.zoomLevel+0.1,-0.1);
+                    }
                 } else {
-                    thisViewer.zoomLevel = Math.min(thisViewer.zoomLevel+0.1,-0.1);
+                    if ($('#volume_button').hasClass('selected')) {
+                        $('#plane_select').val();
+                        thisViewer.setCurrentPlane(Math.max(1,thisViewer.getCurrentPlane()-1));
+                    } else {
+                        thisViewer.zoomLevel -= 0.1;
+                    }
                 }
-            } else {
-                if ($('#volume_button').hasClass('selected')) {
-                    $('#plane_select').val();
-                    thisViewer.setCurrentPlane(Math.max(1,thisViewer.getCurrentPlane()-1));
-                } else {
-                    thisViewer.zoomLevel -= 0.1;
+
+                thisViewer.zoomHook();
+
+                if (!play) {
+                    thisViewer.glContext.render();
                 }
+                thisViewer.roiViewers.map(function(viewer){viewer.render()});
             }
-            if (!play) {
-                thisViewer.glContext.render();
-            }
-            thisViewer.roiViewers.map(function(viewer){viewer.render()});
         });
 
         gl_canvas.bind('mousedown',function(){
@@ -133,10 +141,12 @@ function FrameViewer(gl) {
             if (mouseState.mouseDown && frameViewer.allowDrag) {
                 var dx = event.clientX - mouseState.lastMouseX;
                 var dy = event.clientY - mouseState.lastMouseY;
-                
+
                 var x = thisViewer.offset.x += dx/dragScale;
                 var y = thisViewer.offset.y -= dy/dragScale;
                 thisViewer.setOffset(x,y);
+
+                thisViewer.dragHook();
             }
             mouseState.lastMouseX = event.clientX;
             mouseState.lastMouseY = event.clientY;

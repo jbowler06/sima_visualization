@@ -82,12 +82,12 @@ function ROIViewer(canvas, frameViewer, slider) {
         setRoiLoaded(i);
         setRoiViewing(i);
 
-        var newRoi = new roi(roiLabels[i]);
+        var newRoi = new Roi(roiLabels[i]);
         newRoi.label = response[roiLabels[i]].label;
         newRoi.setPoints(this.gl,response[roiLabels[i]].points);
         newRoi.polys = response[roiLabels[i]].polygons;
         newRoi.bboxes = response[roiLabels[i]].bboxes;
-        this.rois[i] = newRoi;
+        this.rois[this.rois.length] = newRoi;
 
         $('#roi_control_heading roiPolygonsButton').addClass('on');
         if (i < roiLabels.length -1) {
@@ -240,9 +240,9 @@ function ROIViewer(canvas, frameViewer, slider) {
         var oldRoi = this.roi(roi.id);
         if (oldRoi !== "undefined") {
             this.rois.push(roi);
-            roi.setPoints(this.gl, roi.points);
+            roi.setPoints(this.gl, roi.getPoints());
         } else {
-            oldRoi.setPoints(this.gl, roi.points);
+            oldRoi.setPoints(this.gl, roi.getPoints);
         }
 
         self.render();
