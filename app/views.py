@@ -415,11 +415,19 @@ def getFrames():
         if channel:
             channel = int(channel.split('_')[-1])
 
-    if len(planes) > 1:
-        load_frames = frame_loader.load_frames_multiplane
+    if channel is not None:
+        if len(planes) > 1:
+            load_frames = frame_loader.load_frames_multiplane
+        else:
+            load_frames = frame_loader.load_frames
+            planes = planes[0]
+
     else:
-        load_frames = frame_loader.load_frames
-        planes = planes[0]
+        if len(planes) > 1:
+            load_frames = frame_loader.load_frames_multiplane_2chan
+        else:
+            load_frames = frame_loader.load_frames_2chan
+            planes = planes[0]
 
     end = False
     frames = {}

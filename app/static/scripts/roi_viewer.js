@@ -21,6 +21,8 @@ function ROIViewer(canvas, frameViewer, slider) {
     this.needsRender = false;
     this.drawing = false;
     this.drawingInfo = {};
+    this.render_hooks = {};
+
     this.createContext = function() {
         this.transparencyAdjuster.val(this.defaultTransparency);
         this.initShaders();
@@ -50,6 +52,9 @@ function ROIViewer(canvas, frameViewer, slider) {
         $('#roi_mode_button').addClass('hidden');
         $('.activeRoiTab').remove();
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT) ;
+        Object.keys(this.render_hooks).forEach(function(key) {
+            this.render_hooks[key]();
+        }, this);
     }
 
     this.initShaders = function() {
@@ -101,6 +106,10 @@ function ROIViewer(canvas, frameViewer, slider) {
     this.render = function() {
         if (!this.rois.length) {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT) ;
+            Object.keys(this.render_hooks).forEach(function(key) {
+                this.render_hooks[key]();
+            }, this);
+
             return;
         }
 
@@ -134,6 +143,10 @@ function ROIViewer(canvas, frameViewer, slider) {
             this.drawing = true;
             this.drawPolygonRois();
         }
+
+        Object.keys(this.render_hooks).forEach(function(key) {
+            this.render_hooks[key]();
+        }, this);
     }
 
     this.drawSegmentSurface = function(segment) {
@@ -231,7 +244,7 @@ function ROIViewer(canvas, frameViewer, slider) {
         var roi = this.roi(id);
         if (typeof(roi) !== "undefined") {
             this.rois.splice(this.rois.indexOf(roi),1);
-            self.render();
+            this.render();
             return roi;
         }
     }

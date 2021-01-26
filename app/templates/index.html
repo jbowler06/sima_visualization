@@ -440,7 +440,7 @@
         <div class="editablePoint hidden" id="editable_point_template">
             <div class="editableImageContainer"></div>
         </div>
-        <div class="editablePoint hidden" id="roi_label_template">
+        <div class="roiLabelDiv hidden" id="roi_label_template">
             <div class="roiIdLabel"></div>
         </div>
         <canvas class="webGlCanvas" id="gl_canvas" width="800" height="700"></canvas>
@@ -491,10 +491,15 @@
         uniform float startY;
 
         void main(void) {
-            if ((vTextureCoord.s > startX) && (vTextureCoord.t) > startY) {
-                gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
+            if ((vTextureCoord.s > 0.001) && (vTextureCoord.t > 0.001) &&
+                (vTextureCoord.s < 0.999) && (vTextureCoord.t < 0.999)) {
+                if ((vTextureCoord.s > startX) && (vTextureCoord.t > startY)) {
+                    gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
+                } else {
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+                }
             } else {
-                gl_FragColor = vec4(0, 0, 0, 0);
+                gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
             }
         }
     </script>
@@ -930,30 +935,41 @@
         g_frameViewer = new FrameViewer(frameContext);
 
         {% if dataset %}
-        $('#file_input').val(decodeURIComponent('{{ dataset }}'));
-        $('#file_get').trigger('click');
+            $('#file_input').val(decodeURIComponent('{{ dataset }}'));
+            $('#file_get').trigger('click');
 
-        $('#load_dataset_button').attr('auto_click', 'true');
+            $('#load_dataset_button').attr('auto_click', 'true');
 
-        {% if channel %}
-        $('#channel_select').attr('set_val','{{ channel }}');
-        {% endif %}
+            {% if channel %}
+                $('#channel_select').attr('set_val','{{ channel }}');
+            {% endif %}
 
-        {% if cycle %}
-        $('#cycle_select').attr('set_val','{{ cycle }}');
-        {% endif %}
+            {% if cycle %}
+                $('#cycle_select').attr('set_val','{{ cycle }}');
+            {% endif %}
 
-        {% if cutoff1 %}
-            let cutoff1 = JSON.parse('[{{cutoff1}}]');
-            $('#ch1_norm_input_low').attr('set_val', cutoff1[0]);
-            $('#ch1_norm_input_high').attr('set_val', cutoff1[1]);
-        {% endif %}
+            {% if cutoff1 %}
+                try {
+                    let cutoff1 = JSON.parse('[{{cutoff1}}]');
+                    $('#ch1_norm_input_low').attr('set_val', cutoff1[0]);
+                    $('#ch1_norm_input_high').attr('set_val', cutoff1[1]);
+                } catch(e) {
+                    $('#ch2_norm_input_low').attr('set_val', 0);
+                    $('#ch2_norm_input_high').attr('set_val', 8192);
+                }
+            {% endif %}
 
-        {% if cutoff2 %}
-            let cutoff2 = JSON.parse('[{{cutoff2}}]');
-            $('#ch2_norm_input_low').attr('set_val', cutoff2[0]);
-            $('#ch2_norm_input_high').attr('set_val', cutoff2[1]);
-        {% endif %}
+            {% if cutoff2 %}
+                try {
+                    let cutoff2 = JSON.parse('[{{cutoff2}}]');
+                    $('#ch2_norm_input_low').attr('set_val', cutoff2[0]);
+                    $('#ch2_norm_input_high').attr('set_val', cutoff2[1]);
+                } catch (e) {
+                    $('#ch2_norm_input_low').attr('set_val', 0);
+                    $('#ch2_norm_input_high').attr('set_val', 8192);
+                }
+
+            {% endif %}
         {% endif %}
     });
 
@@ -1393,11 +1409,25 @@
 
     }
 
-    function setSelectedData() {
+    function setSelectedData(novel) {
+        if (typeof(novel) === 'undefined') {
+            novel = true;
+        }
+
         if (g_frameBuffer) {
             g_frameBuffer.buffer = []
         }
-        g_roiViewer.clear();
+
+        if (g_roiEditor.rois.length > 0) {
+            _save_editor_roi();
+        }
+        $('.editablePoint.active').remove();
+
+        if (novel === true) {
+            $('.roiLabelDiv.active').remove();
+            g_roiViewer.clear();
+        }
+
         g_frameViewer.initMouse($('#roi_editing_canvas'));
         g_frameBuffer = new FrameBuffer(Date.now(),1000,g_frameViewer.planes);
         g_frameBuffer.set_planes(g_frameViewer.planes);
@@ -1414,10 +1444,13 @@
         }
 
         var newUrl = '{{ url_for('.index') }}?dataset=' + encodeURIComponent(g_filePath) +
-        '&channel=' + encodeURIComponent(g_frameViewer.channel) +
-        '&cycle=' + encodeURIComponent(g_frameViewer.cycle) +
-        '&cutoff1=' + encodeURIComponent(g_normingVal[0]) +
-        '&cutoff2=' + encodeURIComponent(g_normingVal[1]);
+            '&channel=' + encodeURIComponent(g_frameViewer.channel) +
+            '&cycle=' + encodeURIComponent(g_frameViewer.cycle) +
+            '&cutoff1=' + encodeURIComponent(g_normingVal[0]);
+
+        if (g_frameViewer.nChannels > 1) {
+            newUrl = newUrl + '&cutoff2=' + encodeURIComponent(g_normingVal[1]);
+        }
         window.history.pushState("string","dataset",newUrl);
 
         if ($('#channel_select').val() == 'overlay') {
@@ -1507,16 +1540,19 @@
             fullPath = fullPath + file
         }
         $('file_input').val(fullPath);
-        g_filePath = fullPath
+        var new_ds = g_filePath !== fullPath;
+
+        g_filePath = fullPath;
 
         if ((fullPath.slice(-4) == 'sima') || (fullPath.slice(-2) == 'h5')) {
-            g_frameViewer.channel = $('#channel_select').val()
-            g_frameViewer.cycle = $('#cycle_select').val()
-            $('#load_box').addClass('hidden')
-            $('#load_button').removeClass('selected')
-            setSelectedData()
+            g_frameViewer.channel = $('#channel_select').val();
+            g_frameViewer.cycle = $('#cycle_select').val();
+            $('#load_box').addClass('hidden');
+            $('#load_button').removeClass('selected');
+            setSelectedData(new_ds);
         }
-    })
+
+    });
 
     $('#file_select').change(function() {
         fileSelection($('#file_select').val())
@@ -2403,26 +2439,17 @@
         },
         'label_rois_button': {
             'deselect': function() {
-                $('.editablePoint.active').remove();
-                g_frameViewer.zoomHook = function() { };
-                g_frameViewer.dragHook = function() { };
+                $('.roiLabelDiv.active').remove();
+                delete g_roiViewer.render_hooks['label_hook'];
             },
             'select': function() {
-                g_frameViewer.zoomHook = function() {
-                    _handle_button_click({'target':
-                        document.getElementById('label_rois_button')});
-                    _handle_button_click({'target':
-                        document.getElementById('label_rois_button')});
-                };
-                g_frameViewer.dragHook = function() {
-                    _handle_button_click({'target':
-                        document.getElementById('label_rois_button')});
-                    _handle_button_click({'target':
-                        document.getElementById('label_rois_button')});
-                };
-
-
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
+                g_roiViewer.render_hooks['label_hook'] = function() {
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                };
                 g_roiViewer.rois.map(function(roi, idx) {
 
                     roi.getPoints().map(function(plane) {
@@ -2450,7 +2477,7 @@
 
                     var i = 0;
                     for (; i < pixelValues.length; i+=4) {
-                        if (pixelValues[i] != 0) break;
+                        if ((pixelValues[i] != 0) && (pixelValues[i+3] > 0.0))  break;
                     }
 
                     var roiIdLabel = roi.label
@@ -2477,7 +2504,19 @@
                 document.onmousemove = undefined;
             },
             'select': function() {
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                $('.roiEditButton.selected').map(function(){
+                    if (this.id !== 'edit_roi_button') {
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    }
+                });
                 g_frameViewer.allowDrag = false;
+
 
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
                 g_roiEditor.rois[0].getPoints()[plane][0].map(function(point, idx) {
@@ -2523,7 +2562,21 @@
                 g_frameViewer.allowDrag = true;
             },
             'select': function() {
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                $('.roiEditButton.selected').map(function(){
+                    if (this.id !== 'delete_point_button') {
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    }
+                });
                 g_frameViewer.allowDrag = false;
+
+
+
 
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
                 g_roiEditor.rois[0].getPoints()[plane][0].map(function(point, idx) {
@@ -2583,7 +2636,8 @@
                     }
                 }).done(function() {
                     $('#drawing_id').text('');
-                    $('.roiEditButton').addClass('disabled');
+                    $('#drawing_label').val('');
+
                     var roi = g_roiEditor.rois.pop();
                     roi.infoTab.detach();
                     g_roiEditor.render();
@@ -2592,6 +2646,17 @@
                         $('#draw_roi_button').removeClass('selected');
                         ButtonClickEvents['draw_roi_button'].deselect()
                     }
+
+                    if ($('#draw_roi_button').hasClass('selected')) {
+                        $('#draw_roi_button').removeClass('selected');
+                            ButtonClickEvents.draw_roi_button.deselect();
+                        }
+                    $('.roiEditButton').addClass('disabled');
+                    $('.roiEditButton.selected').map(function(){
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    });
+
                 }).fail(function() {
                     alert('there was an error updating the ROI set');
                 }).always(function() {
@@ -2606,6 +2671,18 @@
                 g_roiEditor.mouseDragHandler = undefined;
             },
             'select': function() {
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                $('.roiEditButton.selected').map(function(){
+                    if (this.id !== 'move_roi_button') {
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    }
+                });
+
                 g_frameViewer.allowDrag = false;
                 g_roiEditor.mouseDragHandler = MouseHandlers.translateRoi;
             }
@@ -2657,6 +2734,21 @@
                 $('#draw_roi_button').addClass('selected');
                 g_roiEditor.rois[0].setPoints(g_roiEditor.gl, [ [] ]);
                 g_roiEditor.render();
+
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                        ButtonClickEvents.draw_roi_button.deselect();
+                    }
+                $('.roiEditButton').addClass('disabled');
+                $('.roiEditButton.selected').map(function(){
+                    ButtonClickEvents[this.id].deselect($(this));
+                    $(this).removeClass('selected');
+                });
 
                 ButtonClickEvents.draw_roi_button.select();
                 b.removeClass('selected');

@@ -1,5 +1,9 @@
-#!flask/bin/python
 from app import app as application
+import os
+
+if not os.path.exists('config.py'):
+    from shutil import copyfile
+    copyfile('config.py.tmpl', 'config.py')
 import config
 
 
@@ -39,6 +43,11 @@ class ReverseProxied(object):
 
 
 if __name__ == "__main__":
-    application.wsgi_app = ReverseProxied(application.wsgi_app)
-    application.run(host='0.0.0.0', port=20000)
+
+    if config.REVERSE_PROXY:
+        application.wsgi_app = ReverseProxied(application.wsgi_app)
+        application.run(host=config.HOST, port=config.PORT, debug=True)
+
+    else:
+        application.run(host=config.HOST, port=config.PORT)
 
