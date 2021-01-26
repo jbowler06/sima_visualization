@@ -21,6 +21,8 @@ function ROIViewer(canvas, frameViewer, slider) {
     this.needsRender = false;
     this.drawing = false;
     this.drawingInfo = {};
+    this.render_hooks = {};
+
     this.createContext = function() {
         this.transparencyAdjuster.val(this.defaultTransparency);
         this.initShaders();
@@ -50,6 +52,9 @@ function ROIViewer(canvas, frameViewer, slider) {
         $('#roi_mode_button').addClass('hidden');
         $('.activeRoiTab').remove();
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT) ;
+        Object.keys(this.render_hooks).forEach(function(key) {
+            this.render_hooks[key]();
+        }, this);
     }
 
     this.initShaders = function() {
@@ -82,12 +87,12 @@ function ROIViewer(canvas, frameViewer, slider) {
         setRoiLoaded(i);
         setRoiViewing(i);
 
-        var newRoi = new roi(roiLabels[i]);
+        var newRoi = new Roi(roiLabels[i]);
         newRoi.label = response[roiLabels[i]].label;
         newRoi.setPoints(this.gl,response[roiLabels[i]].points);
         newRoi.polys = response[roiLabels[i]].polygons;
         newRoi.bboxes = response[roiLabels[i]].bboxes;
-        this.rois[i] = newRoi;
+        this.rois[this.rois.length] = newRoi;
 
         $('#roi_control_heading roiPolygonsButton').addClass('on');
         if (i < roiLabels.length -1) {
@@ -101,6 +106,10 @@ function ROIViewer(canvas, frameViewer, slider) {
     this.render = function() {
         if (!this.rois.length) {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT) ;
+            Object.keys(this.render_hooks).forEach(function(key) {
+                this.render_hooks[key]();
+            }, this);
+
             return;
         }
 
@@ -134,6 +143,10 @@ function ROIViewer(canvas, frameViewer, slider) {
             this.drawing = true;
             this.drawPolygonRois();
         }
+
+        Object.keys(this.render_hooks).forEach(function(key) {
+            this.render_hooks[key]();
+        }, this);
     }
 
     this.drawSegmentSurface = function(segment) {
@@ -231,7 +244,7 @@ function ROIViewer(canvas, frameViewer, slider) {
         var roi = this.roi(id);
         if (typeof(roi) !== "undefined") {
             this.rois.splice(this.rois.indexOf(roi),1);
-            self.render();
+            this.render();
             return roi;
         }
     }
@@ -240,9 +253,9 @@ function ROIViewer(canvas, frameViewer, slider) {
         var oldRoi = this.roi(roi.id);
         if (oldRoi !== "undefined") {
             this.rois.push(roi);
-            roi.setPoints(this.gl, roi.points);
+            roi.setPoints(this.gl, roi.getPoints());
         } else {
-            oldRoi.setPoints(this.gl, roi.points);
+            oldRoi.setPoints(this.gl, roi.getPoints);
         }
 
         self.render();

@@ -41,12 +41,24 @@
         </div>
         <div>
             <p><span class="floatLeft">Contrast Cutoff:</span>
+                <div id="channel1_contrast_control" style="float:left">
+                <span style="float: left; margin-left:20px">Channel 1:</span>
                 <input type="text"
                        class="norming_value_input floatLeft"
-                       id="ch1_norm_input">
+                       id="ch1_norm_input_low">
                 <input type="text"
-                       class="norming_value_input floatLeft hidden"
-                       id="ch2_norm_input">
+                       class="norming_value_input floatLeft"
+                       id="ch1_norm_input_high">
+                </div>
+                <div id="channel2_contrast_control" class="hidden" style="float:left">
+                <span style="float: left; margin-left:20px">Channel 2:</span>
+                <input type="text"
+                       class="norming_value_input floatLeft"
+                       id="ch2_norm_input_low">
+                <input type="text"
+                       class="norming_value_input floatLeft"
+                       id="ch2_norm_input_high">
+                </div>
             </p>
         </div>
         <p style="width:auto;margin:0px 5px">
@@ -230,6 +242,18 @@
                                 class="tableButton"
                                 colspan="2"
                                 id="delete_roi_label_button">delete roi list</td>
+                    </tr>
+                    <tr>
+                        <td
+                                class="tableButton handleButtonClick labelRoisButton"
+                                colspan="2"
+                                id="label_rois_button">label rois</td>
+                    </tr>
+                    <tr>
+                        <td
+                                class="tableButton handleButtonClick labelRoisButton"
+                                colspan="2"
+                                id="multilist_rois_button">multiple list loading</td>
                     </tr>
                     <!--tr>
                         <td
@@ -416,6 +440,9 @@
         <div class="editablePoint hidden" id="editable_point_template">
             <div class="editableImageContainer"></div>
         </div>
+        <div class="roiLabelDiv hidden" id="roi_label_template">
+            <div class="roiIdLabel"></div>
+        </div>
         <canvas class="webGlCanvas" id="gl_canvas" width="800" height="700"></canvas>
         <canvas class="webGlCanvas" id="roi_canvas" width="800" height="700"></canvas>
         <canvas class="webGlCanvas" id="roi_editing_canvas" width="800" height="700"></canvas>
@@ -464,10 +491,15 @@
         uniform float startY;
 
         void main(void) {
-            if ((vTextureCoord.s > startX) && (vTextureCoord.t) > startY) {
-                gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
+            if ((vTextureCoord.s > 0.001) && (vTextureCoord.t > 0.001) &&
+                (vTextureCoord.s < 0.999) && (vTextureCoord.t < 0.999)) {
+                if ((vTextureCoord.s > startX) && (vTextureCoord.t > startY)) {
+                    gl_FragColor = vec4(vTextureCoord.s, vTextureCoord.t, 0.5, 1.0);
+                } else {
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+                }
             } else {
-                gl_FragColor = vec4(0, 0, 0, 0);
+                gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
             }
         }
     </script>
@@ -673,7 +705,7 @@
     var g_frameViewer;
     var g_roiViewer;
     var g_roiEditor;
-    var numRois = 0;
+    //var numRois = 0;
 
     var ajaxManager = AjaxManager();
     ajaxManager.init();
@@ -903,26 +935,41 @@
         g_frameViewer = new FrameViewer(frameContext);
 
         {% if dataset %}
-        $('#file_input').val(decodeURIComponent('{{ dataset }}'));
-        $('#file_get').trigger('click');
+            $('#file_input').val(decodeURIComponent('{{ dataset }}'));
+            $('#file_get').trigger('click');
 
-        $('#load_dataset_button').attr('auto_click', 'true');
+            $('#load_dataset_button').attr('auto_click', 'true');
 
-        {% if channel %}
-        $('#channel_select').attr('set_val','{{ channel }}');
-        {% endif %}
+            {% if channel %}
+                $('#channel_select').attr('set_val','{{ channel }}');
+            {% endif %}
 
-        {% if cycle %}
-        $('#cycle_select').attr('set_val','{{ cycle }}');
-        {% endif %}
+            {% if cycle %}
+                $('#cycle_select').attr('set_val','{{ cycle }}');
+            {% endif %}
 
-        {% if cutoff1 %}
-        $('#ch1_norm_input').attr('set_val','{{ cutoff1 }}');
-        {% endif %}
+            {% if cutoff1 %}
+                try {
+                    let cutoff1 = JSON.parse('[{{cutoff1}}]');
+                    $('#ch1_norm_input_low').attr('set_val', cutoff1[0]);
+                    $('#ch1_norm_input_high').attr('set_val', cutoff1[1]);
+                } catch(e) {
+                    $('#ch2_norm_input_low').attr('set_val', 0);
+                    $('#ch2_norm_input_high').attr('set_val', 8192);
+                }
+            {% endif %}
 
-        {% if cutoff2 %}
-        $('#ch2_norm_input').attr('set_val','{{ cutoff2 }}');
-        {% endif %}
+            {% if cutoff2 %}
+                try {
+                    let cutoff2 = JSON.parse('[{{cutoff2}}]');
+                    $('#ch2_norm_input_low').attr('set_val', cutoff2[0]);
+                    $('#ch2_norm_input_high').attr('set_val', cutoff2[1]);
+                } catch (e) {
+                    $('#ch2_norm_input_low').attr('set_val', 0);
+                    $('#ch2_norm_input_high').attr('set_val', 8192);
+                }
+
+            {% endif %}
         {% endif %}
     });
 
@@ -1045,14 +1092,14 @@
 
                 var inst = Instruction();
                 inst.init(
-                    {   url: '{{ url_for(".getFrames", _external=True) }}',
+                    {   url: '{{ url_for(".getFrames") }}',
                         type: 'POST',
                         data: {
                             frames: frames,
                             path: g_filePath,
                             planes: [$('#plane_select').val()],
                             frameDelta: g_frameBuffer.frameDelta,
-                            normingVal: g_normingVal,
+                            normingVal: JSON.stringify(g_normingVal),
                             channel: g_frameViewer.channel,
                             cycle: g_frameViewer.cycle,
                             sequenceId: g_frameBuffer.sequenceId
@@ -1067,8 +1114,10 @@
 
                         $('#indicator').show();
                         $('#indicator').fadeOut(1000);
-                        if (response.hasOwnProperty('frame_'+g_frameBuffer.next())) {
-                            $('#buffering_warning').text('buffering... press start to resume playback');
+                        if (response.hasOwnProperty(
+                                'frame_' + g_frameBuffer.next())) {
+                            $('#buffering_warning').text(
+                                'buffering... press start to resume playback');
                         }
 
                         g_frameBuffer.addFrames(response);
@@ -1093,7 +1142,7 @@
 
 
 //                $.ajax({
-//                    url: '{{ url_for('.getFrames', _external=True) }}',
+//                    url: '{{ url_for('.getFrames') }}',
 //                    type: 'POST',
 //                    data: {
 //                        frames: frames,
@@ -1166,7 +1215,7 @@
                 var inst = Instruction();
                 inst.init(
                     {
-                        url: '{{ url_for(".saveImage", _external=True) }}',
+                        url: '{{ url_for(".saveImage") }}',
                         type: 'POST',
                         cache: false,
                         data: {
@@ -1178,7 +1227,7 @@
                 );
                 ajaxManager.addRequest(inst, false);
 //                $.ajax({
-//                    url: '{{ url_for(".saveImage", _external=True) }}',
+//                    url: '{{ url_for(".saveImage") }}',
 //                    type: 'POST',
 //                    cache: false,
 //                    data: {
@@ -1189,9 +1238,6 @@
 //                });
             }
         }
-
-
-
     }
 
     $('#start_button').click(function() {
@@ -1241,7 +1287,7 @@
         var inst = Instruction();
         inst.init(
             {
-                url: '{{ url_for(".getLabels", _external=True) }}',
+                url: '{{ url_for(".getLabels") }}',
                 type: 'POST',
                 data: {
                     path: filepath
@@ -1261,7 +1307,7 @@
         ajaxManager.addRequest(inst, false);
 
 //        $.ajax({
-//            url: '{{ url_for('.getLabels', _external=True) }}',
+//            url: '{{ url_for('.getLabels') }}',
 //            type: 'POST',
 //            data: {
 //                path: filepath
@@ -1285,7 +1331,7 @@
 
     function fetchInfo(filePath) {
         $.ajax({
-            url: '{{ url_for('.getInfo', _external=True) }}',
+            url: '{{ url_for('.getInfo') }}',
             type: 'POST',
             cache: false,
             data: {
@@ -1307,26 +1353,28 @@
             $('#frame_num_label').text(g_frameViewer.length)
 
             if (response['channel_0']) {
-                var chan1CutoffInput = $('#ch1_norm_input');
+                var chan1CutoffInput = $('#ch1_norm_input_high');
                 if (typeof(chan1CutoffInput.attr('set_val')) !== 'undefined') {
                     chan1CutoffInput.val(chan1CutoffInput.attr('set_val'));
                     chan1CutoffInput.removeAttr('set_val');
                 } else {
-                    chan1CutoffInput.val(response['channel_0'])
+                    $('#ch1_norm_input_low').val(response['channel_0'][0])
+                    $('#ch1_norm_input_high').val(response['channel_0'][1])
                 }
             }
 
             if (response['channel_1']) {
-                var chan2CutoffInput = $('#ch2_norm_input');
-                chan2CutoffInput.removeClass('hidden');
+                var chan2CutoffInput = $('#ch2_norm_input_high');
+                $('#channel2_contrast_control').removeClass('hidden')
                 if (typeof(chan2CutoffInput.attr('set_val')) !== 'undefined') {
                     chan2CutoffInput.val(chan2CutoffInput.attr('set_val'));
                     chan2CutoffInput.removeAttr('set_val');
                 } else {
-                    chan2CutoffInput.val(response['channel_1'])
+                    $('#ch2_norm_input_low').val(response['channel_1'][0])
+                    $('#ch2_norm_input_high').val(response['channel_1'][1])
                 }
             } else {
-                $('#ch2_norm_input').addClass('hidden');
+                $('#channel2_contrast_control').addClass('hidden');
             }
 
             fetching = true
@@ -1361,15 +1409,33 @@
 
     }
 
-    function setSelectedData() {
+    function setSelectedData(novel) {
+        if (typeof(novel) === 'undefined') {
+            novel = true;
+        }
+
         if (g_frameBuffer) {
             g_frameBuffer.buffer = []
         }
-        g_roiViewer.clear();
+
+        if (g_roiEditor.rois.length > 0) {
+            _save_editor_roi();
+        }
+        $('.editablePoint.active').remove();
+
+        if (novel === true) {
+            $('.roiLabelDiv.active').remove();
+            g_roiViewer.clear();
+        }
+
         g_frameViewer.initMouse($('#roi_editing_canvas'));
         g_frameBuffer = new FrameBuffer(Date.now(),1000,g_frameViewer.planes);
         g_frameBuffer.set_planes(g_frameViewer.planes);
-        g_normingVal = [$('#ch1_norm_input').val(),$('#ch2_norm_input').val()]
+        g_normingVal = [
+            [$('#ch1_norm_input_low').val(), $('#ch1_norm_input_high').val()],
+            [$('#ch2_norm_input_low').val(), $('#ch2_norm_input_high').val()],
+        ]
+
         if (!g_normingVal) {
             alert('normalizing value unset')
         }
@@ -1377,11 +1443,14 @@
             $('#buffering_warning').text('buffering.. please wait')
         }
 
-        var newUrl = '{{ url_for('.index',_external=True) }}?dataset=' + encodeURIComponent(g_filePath) +
-        '&channel=' + encodeURIComponent(g_frameViewer.channel) +
-        '&cycle=' + encodeURIComponent(g_frameViewer.cycle) +
-        '&cutoff1=' + encodeURIComponent(g_normingVal[0]) +
-        '&cutoff2=' + encodeURIComponent(g_normingVal[1]);
+        var newUrl = '{{ url_for('.index') }}?dataset=' + encodeURIComponent(g_filePath) +
+            '&channel=' + encodeURIComponent(g_frameViewer.channel) +
+            '&cycle=' + encodeURIComponent(g_frameViewer.cycle) +
+            '&cutoff1=' + encodeURIComponent(g_normingVal[0]);
+
+        if (g_frameViewer.nChannels > 1) {
+            newUrl = newUrl + '&cutoff2=' + encodeURIComponent(g_normingVal[1]);
+        }
         window.history.pushState("string","dataset",newUrl);
 
         if ($('#channel_select').val() == 'overlay') {
@@ -1419,7 +1488,8 @@
         if (fullPath.slice(-5) == '.sima') {
             $('#cycle_select_container').removeClass('hidden');
             $('#cycle_select').prop('disabled',true)
-            $.get('{{ url_for('.getCycles',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+            $.get("{{ url_for('.getCycles', directory='')}}" +
+                  encodeURIComponent(fullPath), function(html) {
                 var cycleSelect = $('#cycle_select');
                 cycleSelect.html('');
                 cycleSelect.html(html);
@@ -1436,7 +1506,8 @@
         if ((fullPath.slice(-5) == '.sima') || (fullPath.slice(-2) == 'h5')) {
             $('#file_select').html('')
             $('#channel_select').prop('disabled',true)
-            $.get('{{ url_for('.getChannels',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+            $.get("{{ url_for('.getChannels', directory='')}}" +
+                  encodeURIComponent(fullPath), function(html) {
                 var channelSelect = $('#channel_select');
                 channelSelect.html('');
                 channelSelect.html(html);
@@ -1450,7 +1521,8 @@
         } else {
             $('#file_input').val(fullPath)
             $('#file_select').prop('disabled', true);
-            $.get('{{ url_for('.getFolders',directory='',_external=True)}}'+fullPath.replace(/\//g , ":!"),function(html) {
+            $.get("{{ url_for('.getFolders', directory='')}}" +
+                  encodeURIComponent(fullPath), function(html) {
                 $('#file_select').html('')
                 $('#file_select').html(html)
                 $('#file_select').prop('disabled', false);
@@ -1468,16 +1540,19 @@
             fullPath = fullPath + file
         }
         $('file_input').val(fullPath);
-        g_filePath = fullPath
+        var new_ds = g_filePath !== fullPath;
+
+        g_filePath = fullPath;
 
         if ((fullPath.slice(-4) == 'sima') || (fullPath.slice(-2) == 'h5')) {
-            g_frameViewer.channel = $('#channel_select').val()
-            g_frameViewer.cycle = $('#cycle_select').val()
-            $('#load_box').addClass('hidden')
-            $('#load_button').removeClass('selected')
-            setSelectedData()
+            g_frameViewer.channel = $('#channel_select').val();
+            g_frameViewer.cycle = $('#cycle_select').val();
+            $('#load_box').addClass('hidden');
+            $('#load_button').removeClass('selected');
+            setSelectedData(new_ds);
         }
-    })
+
+    });
 
     $('#file_select').change(function() {
         fileSelection($('#file_select').val())
@@ -1490,8 +1565,10 @@
     $('#load_button').click(function() {
         $('#load_button').addClass('selected');
         $('#load_box').removeClass('hidden');
-        $('#ch1_norm_input').val(g_normingVal[0]);
-        $('#ch2_norm_input').val(g_normingVal[1]);
+        $('#ch1_norm_input_low').val(g_normingVal[0][0]);
+        $('#ch1_norm_input_high').val(g_normingVal[0][1]);
+        $('#ch2_norm_input_low').val(g_normingVal[1][0]);
+        $('#ch2_norm_input_high').val(g_normingVal[1][1]);
     });
 
     $('#options_button').click(function(){
@@ -1593,7 +1670,7 @@
     function _load_roi(roi_id, color, info_tab) {
 
         $.ajax({
-            url: '{{ url_for('.getRoi', _external=True) }}',
+            url: '{{ url_for('.getRoi') }}',
             type: 'POST',
             cache: false,
             data: {
@@ -1612,7 +1689,7 @@
                         color.b /= 255;
                     }
 
-                    var newRoi = new roi(roi_id, color);
+                    var newRoi = new Roi(roi_id, color);
                     newRoi.label = response[roi_id].label;
                     newRoi.points = response[roi_id].points;
                     if (typeof(info_tab) !== 'undefined') {
@@ -1631,10 +1708,12 @@
 
     function _load_rois() {
 
-        g_roiViewer.clear();
+        if (!$('#multilist_rois_button').hasClass('selected')) {
+            g_roiViewer.clear();
+        }
+
         g_roiEditor.clear();
 
-        numRois = 0; // reset the number of ROIs to 0.
 
         const label = $('#label_select').val();
         if (label === '') {
@@ -1646,7 +1725,7 @@
         var inst = Instruction();
         inst.init(
             {
-                url: '{{ url_for(".getRois", _external=True) }}',
+                url: '{{ url_for(".getRois") }}',
                 type: 'POST',
                 cache: false,
                 data: {
@@ -1658,13 +1737,13 @@
             // on done
             function(response) {
                 //   if (type == "polygons") {
-                g_roiViewer.gl.rois = [];
+                //g_roiViewer.gl.rois = [];
                 var roiLabels = Object.keys(response);
                 if (roiLabels.length != 0) {
                     g_roiViewer.storePolygonRoi(response, roiLabels, 0);
                 }
 
-                numRois = g_roiViewer.getRois().length;
+                //numRois = g_roiViewer.getRois().length;
             },
 
             // on fail
@@ -1713,14 +1792,14 @@
 //        //    var type = 'projections';
 //        //}
 //
-//        //var url = '{{ url_for('.getRoiMasks', _external=True) }}';
+//        //var url = '{{ url_for('.getRoiMasks') }}';
 //        //var colorMode = 1;
 //        //if (label.match('^ica.*\.npz$|^opca.*\.npz')) {
-//        //    var url = '{{ url_for('.getComponents', _external=True) }}';
+//        //    var url = '{{ url_for('.getComponents') }}';
 //        //    colorMode = 0;
 //        //}
 //        //if (type == 'polygons') {
-//        var url = '{{ url_for('.getRois', _external=True) }}';
+//        var url = '{{ url_for('.getRois') }}';
 //        //}
 //
 //        $.ajax({
@@ -1808,14 +1887,16 @@
     $('#single_step_button').click(function(){
         if (!$(this).hasClass('selected')) {
             $('.stepButton').addClass('selected');
-            fetchFrame(g_frameViewer.current + Math.abs(g_frameBuffer.frameDelta))
+            fetchFrame(
+                g_frameViewer.current + Math.abs(g_frameBuffer.frameDelta))
         }
     })
 
     $('#single_reverse_button').click(function(){
         if (!$(this).hasClass('selected')) {
             $('.stepButton').addClass('selected');
-            fetchFrame(g_frameViewer.current - Math.abs(g_frameBuffer.frameDelta))
+            fetchFrame(
+                g_frameViewer.current - Math.abs(g_frameBuffer.frameDelta))
         }
     })
 
@@ -1830,19 +1911,20 @@
 
     function fetchFrame(index) {
         g_frameBuffer.set_next(index);
-        if (!g_frameBuffer.has_next($('#plane_select').val(),g_frameViewer.frame_avg)) {
+        if (!g_frameBuffer.has_next($('#plane_select').val(),
+                                    g_frameViewer.frame_avg)) {
             var indices = Array.apply(null,{length: g_frameViewer.frame_avg})
                 .map(Number.call, Number)
                 .map(function(e) {return (e+index);});
             $.ajax({
-                url: '{{ url_for('.getFrames', _external=True) }}',
+                url: "{{ url_for('.getFrames') }}",
                 type: 'POST',
                 cache: false,
                 data: {
                     frames: indices,
                     planes: [$('#plane_select').val()],
                     path: g_filePath,
-                    normingVal: g_normingVal,
+                    normingVal: JSON.stringify(g_normingVal),
                     channel: g_frameViewer.channel,
                     cycle: g_frameViewer.cycle,
                     sequenceId: g_frameBuffer.sequenceId
@@ -1898,14 +1980,14 @@
 
         $('#volume_button').addClass('loading');
         $.ajax({
-            url: '{{ url_for('.getFrames', _external=True) }}',
+            url: '{{ url_for('.getFrames') }}',
             type: 'POST',
             cache: false,
             data: {
                 frames: [g_frameBuffer.current],
                 planes: g_frameViewer.numPlanes(),
                 path: g_filePath,
-                normingVal: g_normingVal,
+                normingVal: JSON.stringify(g_normingVal),
                 channel: g_frameViewer.channel,
                 cycle: g_frameViewer.cycle,
                 sequenceId: g_frameBuffer.sequenceId
@@ -1992,7 +2074,7 @@
         $('#label_select').val(newLabel).change();
         $('#label_select option').remove();
         $.ajax({
-            url: '{{ url_for('.setRoiLabel', _external=True) }}',
+            url: '{{ url_for('.setRoiLabel') }}',
             type: 'POST',
             data: {
                 path: g_filePath,
@@ -2010,7 +2092,7 @@
             //}
             $('#label_select')[0].add(new Option('None', ''));
             response.labels.map(function(e, a, i) {
-                console.log(e);
+                //console.log(e);
                 $('#label_select')[0].add(new Option(e, e));
             });
             $('#label_select').val(newLabel);
@@ -2044,7 +2126,7 @@
         $('#label_select').val('').change();
 
         $.ajax({
-            url: '{{ url_for('.deleteRoiSet', _external=True) }}',
+            url: '{{ url_for('.deleteRoiSet') }}',
             type: 'POST',
             cache: false,
             data: {
@@ -2076,18 +2158,40 @@
             .css('top',top);
     }
 
+
+    function _add_roi_label(left, top, id, label, color) {
+        if ((!left) || (!top) ||
+            (left >= g_frameViewer.glContext.viewportWidth) ||
+            (top >= g_frameViewer.glContext.viewportHeight)) {
+            return;
+        }
+
+        var color_string = 'rgb(' + color.r*255 + ', ' + color.b*255 + ', ' + color.g*255 + ')';
+        var label_div = $('#roi_label_template').clone(true)
+            .removeClass('hidden')
+            .attr('id',id)
+            .appendTo('.canvasContainer')
+            .addClass('active')
+            .css('left',left)
+            .css('top',top)
+            .css('color', color_string);
+       label_div.find('.roiIdLabel').html(label)
+       return label_div;
+    }
+
+
     function _update_roi(roi) {
 
         var inst = Instruction();
         inst.init(
             {
-                url: '{{ url_for(".updateRoi", _external=True) }}',
+                url: '{{ url_for(".updateRoi") }}',
                 type: 'POST',
                 cache: false,
                 data: {
                     path: g_filePath,
                     label: $('#label_select').val(),
-                    points: JSON.stringify(roi.points),
+                    points: JSON.stringify(roi.getPoints()),
                     roiLabel: roi.label,
                     roiId: roi.id
                 }
@@ -2102,7 +2206,7 @@
         ajaxManager.addRequest(inst, true);
 //
 //        $.ajax({
-//            url: '{{ url_for(".updateRoi", _external=True) }}',
+//            url: '{{ url_for(".updateRoi") }}',
 //            type: 'POST',
 //            cache: false,
 //            data: {
@@ -2261,15 +2365,15 @@
 
                 g_frameViewer.allowDrag = false;
                 if (!g_roiEditor.rois.length) {
-                    var newRoi = new roi(Date.now());
+                    var newRoi = new Roi(Date.now());
                     _edit_roi(newRoi);
 
-                    console.log(g_roiEditor.rois[0]);
+                    // console.log(g_roiEditor.rois[0]);
                 }
                 g_roiEditor.mouseClickHandler = MouseHandlers.drawRoi;
                 g_roiEditor.mouseDragHandler = MouseHandlers.drawRoi;
 
-                console.log(g_roiEditor.rois[0]);
+                // console.log(g_roiEditor.rois[0]);
             }
         },
 
@@ -2280,14 +2384,14 @@
             'select': function(b) {
                 var roi = g_roiEditor.rois[0];
                 $.ajax({
-                    url: '{{ url_for('.simplifyRoi', _external=True) }}',
+                    url: '{{ url_for('.simplifyRoi') }}',
                     type: 'POST',
                     cache: false,
                     data: {
                         path: g_filePath,
                         frame_shape: JSON.stringify([g_frameViewer.numPlanes(),
                             g_frameViewer.height, g_frameViewer.width]),
-                        points: JSON.stringify(roi.points),
+                        points: JSON.stringify(roi.getPoints()),
                         roiId: roi.id
                     }
                 }).done(function(response) {
@@ -2327,6 +2431,72 @@
             }
         },
 
+        'multilist_rois_button': {
+            'deselect': function() {
+                $('#label_select').val('').change();
+            },
+            'select': function() { }
+        },
+        'label_rois_button': {
+            'deselect': function() {
+                $('.roiLabelDiv.active').remove();
+                delete g_roiViewer.render_hooks['label_hook'];
+            },
+            'select': function() {
+                var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
+                g_roiViewer.render_hooks['label_hook'] = function() {
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                    _handle_button_click({'target':
+                        document.getElementById('label_rois_button')});
+                };
+                g_roiViewer.rois.map(function(roi, idx) {
+
+                    roi.getPoints().map(function(plane) {
+                        plane.map(function(points) {
+
+                    var point = points.reduce(function(x, pt, idx) {
+                        return [(x[0]*idx + pt[0])/(idx+1),
+                                (x[1]*idx + pt[1])/(idx + 1)]}, [0, 0]);
+
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startX,
+                        point[0]/g_frameViewer.width);
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startY,
+                        1-point[1]/g_frameViewer.height);
+                    drawColorMap(positioningContext, 0);
+
+                    var canvas = $('#positioning_canvas');
+                    var height = canvas.height();
+                    var width = canvas.width();
+                    var pixelValues = new Uint8Array(height*width*4);
+                    positioningContext.readPixels(0, 0, width, height,
+                        positioningContext.RGBA, positioningContext.UNSIGNED_BYTE,
+                        pixelValues);
+
+                    var i = 0;
+                    for (; i < pixelValues.length; i+=4) {
+                        if ((pixelValues[i] != 0) && (pixelValues[i+3] > 0.0))  break;
+                    }
+
+                    var roiIdLabel = roi.label
+                    _add_roi_label(
+                        (i/4)%width, height-Math.floor(i/4/width),
+                        ('vert_' + idx), roiIdLabel, roi.color)
+
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startX, 0);
+                    positioningContext.uniform1f(
+                        positioningContext.shaderProgram.startY, 0);
+                    drawColorMap(positioningContext, 0);
+
+                    });
+                    });
+                });
+            }
+        },
+
         'edit_roi_button': {
             'deselect': function() {
                 $('.editablePoint.active').remove();
@@ -2334,10 +2504,22 @@
                 document.onmousemove = undefined;
             },
             'select': function() {
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                $('.roiEditButton.selected').map(function(){
+                    if (this.id !== 'edit_roi_button') {
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    }
+                });
                 g_frameViewer.allowDrag = false;
 
+
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
-                g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
+                g_roiEditor.rois[0].getPoints()[plane][0].map(function(point, idx) {
 
                     positioningContext.uniform1f(
                         positioningContext.shaderProgram.startX,
@@ -2380,10 +2562,24 @@
                 g_frameViewer.allowDrag = true;
             },
             'select': function() {
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                $('.roiEditButton.selected').map(function(){
+                    if (this.id !== 'delete_point_button') {
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    }
+                });
                 g_frameViewer.allowDrag = false;
 
+
+
+
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
-                g_roiEditor.rois[0].points[plane][0].map(function(point, idx) {
+                g_roiEditor.rois[0].getPoints()[plane][0].map(function(point, idx) {
 
                     positioningContext.uniform1f(
                         positioningContext.shaderProgram.startX,
@@ -2430,7 +2626,7 @@
                 }
 
                 $.ajax({
-                    url: '{{ url_for('.deleteRoi', _external=True) }}',
+                    url: '{{ url_for('.deleteRoi') }}',
                     type: 'POST',
                     cache: false,
                     data: {
@@ -2440,7 +2636,8 @@
                     }
                 }).done(function() {
                     $('#drawing_id').text('');
-                    $('.roiEditButton').addClass('disabled');
+                    $('#drawing_label').val('');
+
                     var roi = g_roiEditor.rois.pop();
                     roi.infoTab.detach();
                     g_roiEditor.render();
@@ -2449,6 +2646,17 @@
                         $('#draw_roi_button').removeClass('selected');
                         ButtonClickEvents['draw_roi_button'].deselect()
                     }
+
+                    if ($('#draw_roi_button').hasClass('selected')) {
+                        $('#draw_roi_button').removeClass('selected');
+                            ButtonClickEvents.draw_roi_button.deselect();
+                        }
+                    $('.roiEditButton').addClass('disabled');
+                    $('.roiEditButton.selected').map(function(){
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    });
+
                 }).fail(function() {
                     alert('there was an error updating the ROI set');
                 }).always(function() {
@@ -2463,6 +2671,18 @@
                 g_roiEditor.mouseDragHandler = undefined;
             },
             'select': function() {
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                $('.roiEditButton.selected').map(function(){
+                    if (this.id !== 'move_roi_button') {
+                        ButtonClickEvents[this.id].deselect($(this));
+                        $(this).removeClass('selected');
+                    }
+                });
+
                 g_frameViewer.allowDrag = false;
                 g_roiEditor.mouseDragHandler = MouseHandlers.translateRoi;
             }
@@ -2512,9 +2732,23 @@
             },
             'select': function(b) {
                 $('#draw_roi_button').addClass('selected');
-                g_roiEditor.rois[0].points = [];
-                g_roiEditor.rois[0].segments = [];
+                g_roiEditor.rois[0].setPoints(g_roiEditor.gl, [ [] ]);
                 g_roiEditor.render();
+
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                    ButtonClickEvents['draw_roi_button'].deselect()
+                }
+
+                if ($('#draw_roi_button').hasClass('selected')) {
+                    $('#draw_roi_button').removeClass('selected');
+                        ButtonClickEvents.draw_roi_button.deselect();
+                    }
+                $('.roiEditButton').addClass('disabled');
+                $('.roiEditButton.selected').map(function(){
+                    ButtonClickEvents[this.id].deselect($(this));
+                    $(this).removeClass('selected');
+                });
 
                 ButtonClickEvents.draw_roi_button.select();
                 b.removeClass('selected');
@@ -2580,17 +2814,23 @@
         },
 
         'drawRoi': function(x, y, e) {
+            if ((typeof(x) === 'undefined') || (typeof(y) === 'undefined')) {
+                return;
+            }
+
             if (g_frameViewer.getCurrentPlane() == 0) {
-                for (plane_idx = 0; plane_idx < g_frameViewer.numPlanes(); plane_idx++) {
+                for (plane_idx = 0;
+                     plane_idx < g_frameViewer.numPlanes();
+                     plane_idx++) {
                     g_roiEditor.rois[0].addPoint(
                         g_roiEditor.gl,plane_idx,0,[x,y]);
                 }
             } else {
-                console.log('here 2');
-                console.log(g_roiEditor.rois[0]);
+                //console.log(g_roiEditor.rois[0]);
 
                 g_roiEditor.rois[0].addPoint(
-                    g_roiEditor.gl,g_frameViewer.getCurrentPlane()-1,0,[x,y]);
+                    g_roiEditor.gl, g_frameViewer.getCurrentPlane()-1, 0,
+                    [x,y]);
             }
 
             g_roiEditor.render();
@@ -2603,7 +2843,7 @@
 
             var roi = g_roiEditor.rois[0];
             if (typeof(roi) !== "undefined") {
-                var points = roi.points;
+                var points = roi.getPoints();
                 var plane = g_frameViewer.getCurrentPlane()-1;
                 var planes = []
                 if (plane != -1) {
@@ -2646,7 +2886,7 @@
                 var transXval = pixelValues[0]*g_frameViewer.width/255;
                 var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
 
-                var newPoints = g_roiEditor.rois[0].points;
+                var newPoints = g_roiEditor.rois[0].getPoints();
 
                 var plane = g_frameViewer.getCurrentPlane()-1;
                 if (plane < 0) {
@@ -2698,8 +2938,22 @@
             } else if (e.keyCode == 75) {
                 _handle_button_click({'target':
                     document.getElementById('mark_roi_button')});
+            } else if ((e.keyCode >= 49) && (e.keyCode <= 57)) {
+                if (g_roiEditor.rois.length) {
+                    var plane = g_frameViewer.getCurrentPlane()-1;
+                    g_roiEditor.rois[0].setRadius(g_roiEditor.gl,plane,0,e.keyCode-48);
+                    g_roiEditor.render();
+                }
+            } else if (e.keyCode == 48) {
+                if (g_roiEditor.rois.length) {
+                    var plane = g_frameViewer.getCurrentPlane()-1;
+                    g_roiEditor.rois[0].setRadius(g_roiEditor.gl,plane,0,10);
+                    g_roiEditor.render();
+                }
+            } else if (e.keyCode == 221) {
+                _handle_button_click({'target':
+                    document.getElementById('label_rois_button')});
             }
-
         },
 
         'roiDrawingMode': function(e) {
@@ -2709,7 +2963,7 @@
                 color.g /= 255;
                 color.b /= 255;
 
-                var newRoi = new roi(Date.now(),color);
+                var newRoi = new Roi(Date.now(),color);
                 _edit_roi(newRoi);
 
             } else if (e.keyCode == 83) {
@@ -2755,6 +3009,7 @@
     }
 
     $(document).keydown(function(e) {
+
         if ($('input').is(':focus')) return;
 
         if (e.metaKey) return;
@@ -2797,7 +3052,7 @@
 
     // when ROIs are loaded on the canvas, a double click can select ROIs
     $('#roi_editing_canvas').dblclick(function(e) {
-        if (numRois > 0) {
+        if (g_roiViewer.rois.length > 0) {
 
             drawColorMap(positioningContext, 0);
             var parentOffset = $(this).parent().offset();
@@ -2860,7 +3115,7 @@
         var pixelValues = new Uint8Array(4);
         positioningContext.readPixels(relX, relY, 1, 1, positioningContext.RGBA,
             positioningContext.UNSIGNED_BYTE, pixelValues);
-        console.log(pixelValues[0] + ' ' + pixelValues[1] + ' ' + pixelValues[2]);
+        // console.log(pixelValues[0] + ' ' + pixelValues[1] + ' ' + pixelValues[2]);
     });
 
     var selected = null,
@@ -2896,7 +3151,7 @@
         var transXval = pixelValues[0]*g_frameViewer.width/255;
         var transYval = (255-pixelValues[1])*g_frameViewer.height/255;
 
-        var newPoints = g_roiEditor.rois[0].points;
+        var newPoints = g_roiEditor.rois[0].getPoints();
 
         var plane = g_frameViewer.getCurrentPlane()-1;
         const vert_num = selected.id.substr(5);

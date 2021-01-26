@@ -1,3 +1,4 @@
 WTF_CSRF_ENABLED = False
-
-port=6005
+HOST = '0.0.0.0'
+PORT = 20000
+REVERSE_PROXY = True
