@@ -1689,14 +1689,12 @@
                         color.b /= 255;
                     }
 
-                    var newRoi = new Roi(roi_id, color);
-                    newRoi.label = response[roi_id].label;
-                    newRoi.points = response[roi_id].points;
+                    g_roiViewer.storePolygonRoi(response, [roi_id], 0);
+                    const newRoi = g_roiViewer.roi(roi_id);
                     if (typeof(info_tab) !== 'undefined') {
                         newRoi.infoTab.remove();
                         newRoi.infoTab = info_tab;
                     }
-                    g_roiViewer.addRoi(newRoi);
                 }
             })
             .fail(function() {
@@ -1707,21 +1705,29 @@
     }
 
     function _load_rois() {
-
-        if (!$('#multilist_rois_button').hasClass('selected')) {
-            g_roiViewer.clear();
-        }
-
-        g_roiEditor.clear();
-
+        _save_editor_roi(g_roiViewer.roilist_label);
+        //g_roiEditor.clear();
 
         const label = $('#label_select').val();
         if (label === '') {
+            g_roiViewer.clear();
             return;
         }
+        g_roiViewer.roilist_label = label;
+        if (!$('#multilist_rois_button').hasClass('selected')) {
+            g_roiViewer.clear();
+        } else {
+            const pre_loaded = g_roiViewer.rois.map(
+                function(e) {
+                    return e.getListLabel() == label
+                }).reduce(function(a, b) {return (a||b)}, false);
+            if (pre_loaded) {
+                return;
+            }
+        }
+
 
         $('#label_select').prop('disabled',true);
-
         var inst = Instruction();
         inst.init(
             {
@@ -2180,7 +2186,17 @@
     }
 
 
-    function _update_roi(roi) {
+    function _update_roi(roi, roilist_label) {
+        var list_label;
+        if ((typeof(roilist_label) === 'undefined') || (roilist_label === null)) {
+            list_label = $('#label_select').val()
+        } else {
+            list_label = roilist_label;
+        }
+
+        if ((typeof(list_label) === 'undefinded') || (list_label.length == 0)) {
+            alert("unable to update roi, roi list label error");
+        }
 
         var inst = Instruction();
         inst.init(
@@ -2190,7 +2206,7 @@
                 cache: false,
                 data: {
                     path: g_filePath,
-                    label: $('#label_select').val(),
+                    label: list_label,
                     points: JSON.stringify(roi.getPoints()),
                     roiLabel: roi.label,
                     roiId: roi.id
@@ -2224,7 +2240,7 @@
     }
 
     //TODO: group roi editor module (?)
-    function _save_editor_roi() {
+    function _save_editor_roi(roilist_label) {
         if (!g_roiEditor.rois.length) {
             return;
         }
@@ -2233,7 +2249,7 @@
         roi.label = $('#drawing_label').val();
         g_roiViewer.addRoi(roi);
         roi.infoTab.removeClass('selected');
-        _update_roi(roi);
+        _update_roi(roi, roilist_label);
         $('#drawing_id').text('');
         $('#drawing_label').val('');
         if ($('#draw_roi_button').hasClass('selected')) {
@@ -2501,6 +2517,7 @@
             'deselect': function() {
                 $('.editablePoint.active').remove();
                 g_frameViewer.allowDrag = true;
+                g_frameViewer.allowZoom = true;
                 document.onmousemove = undefined;
             },
             'select': function() {
@@ -2516,6 +2533,7 @@
                     }
                 });
                 g_frameViewer.allowDrag = false;
+                g_frameViewer.allowZoom = false;
 
 
                 var plane = Math.max(g_frameViewer.getCurrentPlane()-1, 0);
@@ -2736,20 +2754,14 @@
                 g_roiEditor.render();
 
                 if ($('#draw_roi_button').hasClass('selected')) {
-                    $('#draw_roi_button').removeClass('selected');
                     ButtonClickEvents['draw_roi_button'].deselect()
                 }
-
-                if ($('#draw_roi_button').hasClass('selected')) {
-                    $('#draw_roi_button').removeClass('selected');
-                        ButtonClickEvents.draw_roi_button.deselect();
-                    }
-                $('.roiEditButton').addClass('disabled');
                 $('.roiEditButton.selected').map(function(){
                     ButtonClickEvents[this.id].deselect($(this));
                     $(this).removeClass('selected');
                 });
 
+                $('#draw_roi_button').addClass('selected');
                 ButtonClickEvents.draw_roi_button.select();
                 b.removeClass('selected');
             }
@@ -2793,12 +2805,14 @@
             var roi_id = g_roiViewer.getRoi(x,y, g_frameViewer.getCurrentPlane()-1);
 
             if (roi_id != null) {
-                var roi = g_roiViewer.popRoi(roi_id);
-                if (typeof(roi) !=="undefined") {
-                    _edit_roi(roi);
+                if (g_roiViewer.roi(roi_id).getListLabel() === g_roiViewer.roilist_label) {
+                    var roi = g_roiViewer.popRoi(roi_id);
+                    if (typeof(roi) !=="undefined") {
+                        _edit_roi(roi);
+                    }
+                    button.removeClass('selected');
+                    ButtonClickEvents['select_roi_button'].deselect(button);
                 }
-                button.removeClass('selected');
-                ButtonClickEvents['select_roi_button'].deselect(button);
             }
             else {
 

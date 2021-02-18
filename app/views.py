@@ -174,12 +174,12 @@ def getLabels():
         with open(os.path.join(dataset.savedir, 'rois.pkl'), 'rb') as f:
             labels = pickle.load(f).keys()
     except:
-        #return ''
         return jsonify({ 'labels': [] })
 
     labels.extend(
         map(os.path.basename, glob.glob(os.path.join(ds_path, 'opca*.npz'))))
 
+    labels = filter(lambda x: len(x) > 0, labels)
     #return render_template('select_list.html',options=['']+labels)
     return jsonify({ 'labels': labels })
 
@@ -534,7 +534,7 @@ def setRoiLabel():
     old_label = ''
     new_label = request.form.get('newLabel')
 
-    if new_label == '':
+    if new_label == '' or len(new_label) == 0:
         new_label = 'rois'
 
     dataset = ImagingDataset.load(ds_path)
@@ -594,6 +594,9 @@ def updateRoi():
     points = json.loads(request.form.get('points'))
     roi_label = request.form.get('roiLabel')
     roi_id = request.form.get('roiId')
+
+    if label == '' or len(label) == 0:
+        raise Exception('ROIList not found')
 
     dataset = ImagingDataset.load(ds_path)
     roi_data = []

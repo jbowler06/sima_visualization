@@ -18,6 +18,7 @@ function ROIViewer(canvas, frameViewer, slider) {
     this.transparencyAdjuster = slider;
     this.gl = initGL(this.canvas[0]);
     this.rois = [];
+    this.roilist_label = null;
     this.needsRender = false;
     this.drawing = false;
     this.drawingInfo = {};
@@ -88,6 +89,7 @@ function ROIViewer(canvas, frameViewer, slider) {
         setRoiViewing(i);
 
         var newRoi = new Roi(roiLabels[i]);
+        newRoi.setListLabel(this.roilist_label);
         newRoi.label = response[roiLabels[i]].label;
         newRoi.setPoints(this.gl,response[roiLabels[i]].points);
         newRoi.polys = response[roiLabels[i]].polygons;
@@ -255,7 +257,7 @@ function ROIViewer(canvas, frameViewer, slider) {
             this.rois.push(roi);
             roi.setPoints(this.gl, roi.getPoints());
         } else {
-            oldRoi.setPoints(this.gl, roi.getPoints);
+            oldRoi.setPoints(this.gl, roi.getPoints());
         }
 
         self.render();

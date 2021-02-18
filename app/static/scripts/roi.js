@@ -6,6 +6,7 @@ Roi = function (roi_id) {
     // field declaration
     var id,
         label,
+        list_label,
         color,
         isMarked,
         mask,
@@ -22,6 +23,8 @@ Roi = function (roi_id) {
 
     // method declarations
     var init,
+        setListLabel,
+        getListLabel,
         calculateBbox,
         isPointInPolygon,
         isPointInRoi,
@@ -46,6 +49,7 @@ Roi = function (roi_id) {
         bboxes= [];
         segments = [];
         points = [];
+        list_label = null;
 
         //TODO: remove theis global reference
         widthScale = g_frameViewer.mainProjectionWidth/g_frameViewer.width;
@@ -57,6 +61,14 @@ Roi = function (roi_id) {
                       g_frameViewer.mainProjectionHeight/2;
         assign_color();
         infoTab = createRoiTab();
+    }
+
+    setListLabel = function(roilist_label) {
+        list_label = String(roilist_label);
+    }
+
+    getListLabel = function() {
+        return String(list_label);
     }
 
     // TODO consider updating a bbox field whenever the points are updated
@@ -255,7 +267,9 @@ Roi = function (roi_id) {
         display: display,
         color: color,
         getMarked: getMarked,
-        setMarked: setMarked
+        setMarked: setMarked,
+        setListLabel: setListLabel,
+        getListLabel: getListLabel
     }
 }
 
