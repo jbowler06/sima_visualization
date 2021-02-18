@@ -551,6 +551,8 @@ def setRoiLabel():
     labels.extend(
         map(os.path.basename, glob.glob(os.path.join(ds_path, 'opca*.npz'))))
 
+    labels = filter(lambda x: len(x) > 0, labels)
+
     return jsonify({ 'labels': labels })
 
 
